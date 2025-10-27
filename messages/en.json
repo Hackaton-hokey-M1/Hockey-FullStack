@@ -12,8 +12,8 @@
   },
   "Navbar": {
     "home": "Home",
-    "about": "About",
-    "contact": "Contact",
-    "login": "Login"
+    "matches": "Matches",
+    "login": "Login",
+    "register": "Sign up"
   }
 }

@@ -12,8 +12,8 @@
   },
   "Navbar": {
     "home": "Accueil",
-    "about": "À propos",
-    "contact": "Contact",
-    "login": "Connexion"
+    "matches": "Matchs",
+    "login": "Connexion",
+    "register": "S'inscrire"
   }
 }

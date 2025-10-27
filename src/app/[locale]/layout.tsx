@@ -1,15 +1,15 @@
 import { ReactNode } from "react";
 
 import type { Metadata } from "next";
-import { hasLocale, NextIntlClientProvider } from 'next-intl';
-import { ThemeProvider } from 'next-themes';
+import { hasLocale, NextIntlClientProvider } from "next-intl";
+import { ThemeProvider } from "next-themes";
 
 import { Geist, Geist_Mono } from "next/font/google";
-import { notFound } from 'next/navigation';
+import { notFound } from "next/navigation";
 
 import Navbar from "@/components/Navbar";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { routing } from '@/i18n/routing';
+import { routing } from "@/i18n/routing";
 
 import "@/app/global.css";
 
@@ -41,16 +41,18 @@ export default async function LocaleLayout({ children, params }: Props) {
 
   return (
     <html lang={locale} suppressHydrationWarning>
-    <body className={`${geistSans.variable} ${geistMono.variable} font-sans`}>
-    <AuthProvider>
-      <ThemeProvider attribute='class'>
-        <NextIntlClientProvider>
-          <Navbar/>
-          {children}
-        </NextIntlClientProvider>
-      </ThemeProvider>
-    </AuthProvider>
-    </body>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} font-sans bg-linear-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950`}
+      >
+        <AuthProvider>
+          <ThemeProvider attribute="class">
+            <NextIntlClientProvider>
+              <Navbar />
+              <div className="pt-40">{children}</div>
+            </NextIntlClientProvider>
+          </ThemeProvider>
+        </AuthProvider>
+      </body>
     </html>
   );
 }

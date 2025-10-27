@@ -16,8 +16,8 @@ export default function GroupActions({
     if (onCreateGroup) {
       onCreateGroup();
     } else {
-      // TODO: Implémenter la logique de création de groupe
-      console.log("Créer un groupe de pari");
+      // Rediriger vers la page de création
+      window.location.href = "/groups/create";
     }
   };
 

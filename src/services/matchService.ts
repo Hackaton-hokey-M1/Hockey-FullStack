@@ -134,7 +134,7 @@ export const matchService = {
   async getMatchesByTournament(tournamentId: number): Promise<Match[]> {
     try {
       const [matchesResponse, teams] = await Promise.all([
-        matchApi.get<ApiMatch[]>(`/tournaments/${tournamentId}/matches`),
+        matchApi.get<ApiMatch[]>(`/matches/tournament/${tournamentId}`),
         teamService.getAllTeams(),
       ]);
 

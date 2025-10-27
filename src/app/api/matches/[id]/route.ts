@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const API_BASE_URL = "https://api-jsem.onrender.com";
+const API_BASE_URL = process.env.API_BASE_URL;
 
 export async function GET(
   request: NextRequest,

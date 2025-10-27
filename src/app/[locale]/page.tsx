@@ -8,8 +8,8 @@ import MatchList from "@/components/MatchList";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-linear-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950">
-      <main className="container mx-auto px-4 pt-32 pb-8 max-w-7xl">
+    <div className="min-h-screen">
+      <main className="container mx-auto px-4 pb-8 max-w-7xl">
         {/* Dashboard Header */}
         <div className="mb-8">
           <motion.div

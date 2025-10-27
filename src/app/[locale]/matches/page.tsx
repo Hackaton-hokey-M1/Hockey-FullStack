@@ -6,8 +6,8 @@ import MatchList from "@/components/MatchList";
 
 export default function MatchesPage() {
   return (
-    <div className="min-h-screen bg-linear-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950">
-      <main className="container mx-auto px-4 pt-32 pb-8 max-w-7xl">
+    <div className="min-h-screen">
+      <main className="container mx-auto px-4 pb-8 max-w-7xl">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -30 }}

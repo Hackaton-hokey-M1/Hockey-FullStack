@@ -15,5 +15,20 @@
     "matches": "Matches",
     "login": "Login",
     "register": "Sign up"
+  },
+  "CreateGroup": {
+    "title": "Create a betting group",
+    "subtitle": "Start your own group and bet with your friends",
+    "groupName": "Group name",
+    "groupNamePlaceholder": "Ex: Hockey Champions",
+    "visibility": "Visibility",
+    "public": "Public",
+    "publicDescription": "Anyone can join your group",
+    "private": "Private",
+    "privateDescription": "Only invited members can join",
+    "description": "Description (optional)",
+    "descriptionPlaceholder": "Describe your group...",
+    "createButton": "Create group",
+    "cancel": "Cancel"
   }
 }

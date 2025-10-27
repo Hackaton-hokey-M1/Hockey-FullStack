@@ -15,5 +15,20 @@
     "matches": "Matchs",
     "login": "Connexion",
     "register": "S'inscrire"
+  },
+  "CreateGroup": {
+    "title": "Créer un groupe de paris",
+    "subtitle": "Lancez votre propre groupe et pariez avec vos amis",
+    "groupName": "Nom du groupe",
+    "groupNamePlaceholder": "Ex: Les Champions du Hockey",
+    "visibility": "Visibilité",
+    "public": "Public",
+    "publicDescription": "Tout le monde peut rejoindre votre groupe",
+    "private": "Privé",
+    "privateDescription": "Seuls les membres invités peuvent rejoindre",
+    "description": "Description (optionnel)",
+    "descriptionPlaceholder": "Décrivez votre groupe...",
+    "createButton": "Créer le groupe",
+    "cancel": "Annuler"
   }
 }

@@ -44,6 +44,6 @@ export async function POST(request: Request) {
 
     return res;
   } catch (err) {
-    return NextResponse.json({ error: "Erreur lors du rafraîchissement du token" }, { status: 500 });
+    return NextResponse.json({ error: "Erreur lors du rafraîchissement du token " + err }, { status: 500 });
   }
 }

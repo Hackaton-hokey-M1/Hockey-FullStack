@@ -1,0 +1,19 @@
+{
+  "Login": {
+    "title": "Se connecter",
+    "email": "E-mail",
+    "password": "Mot de passe",
+    "submit": "Soumettre",
+    "invalidEmail": "E-mail invalide",
+    "minPassword": "Minimum 6 caractères",
+    "description": "Entrez votre e-mail ci-dessous pour vous connecter à votre compte",
+    "signUp": "Inscrivez-vous",
+    "forgotPassword": "Mot de passe oublié?"
+  },
+  "Navbar": {
+    "home": "Accueil",
+    "about": "À propos",
+    "contact": "Contact",
+    "login": "Connexion"
+  }
+}

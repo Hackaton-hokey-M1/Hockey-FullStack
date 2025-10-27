@@ -13,6 +13,33 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  {
+    rules: {
+      "react-hooks/set-state-in-effect": "off",
+      "padding-line-between-statements": [
+        "error",
+        { "blankLine": "always", "prev": "directive", "next": "*" },
+        { "blankLine": "any", "prev": "directive", "next": "directive" }
+      ],
+      "import/order": ["error", {
+        "groups": [
+          ["builtin", "external"],
+          ["internal"],
+          ["parent", "sibling", "index"]
+        ],
+        "pathGroups": [
+          { "pattern": "react", "group": "external", "position": "before" },
+          { "pattern": "next/**", "group": "external", "position": "after" },
+          { "pattern": "@components/**", "group": "internal", "position": "after" },
+          { "pattern": "@contexts/**", "group": "internal", "position": "after" },
+          { "pattern": "@/**", "group": "internal", "position": "after" }
+        ],
+        "pathGroupsExcludedImportTypes": ["react"],
+        "newlines-between": "always",
+        "alphabetize": { "order": "asc", "caseInsensitive": true }
+      }]
+    },
+  },
 ]);
 
 export default eslintConfig;

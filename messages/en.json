@@ -1,0 +1,19 @@
+{
+  "Login": {
+    "title": "Login",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Submit",
+    "invalidEmail": "Invalid email",
+    "minPassword": "Minimum 6 characters",
+    "description": "Enter your email below to login to your account\n",
+    "signUp": "Sign up",
+    "forgotPassword": "Forgot Password?"
+  },
+  "Navbar": {
+    "home": "Home",
+    "about": "About",
+    "contact": "Contact",
+    "login": "Login"
+  }
+}

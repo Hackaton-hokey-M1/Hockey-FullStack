@@ -1,18 +1,9 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 import { supabase } from '@/lib/supabase';
 
-export async function POST(request: Request) {
-  const cookieHeader = request.headers.get("cookie");
-  const cookies: Record<string, string> = cookieHeader
-    ? cookieHeader.split(';').reduce((acc, cookie) => {
-      const [name, ...rest] = cookie.split('=');
-      acc[name.trim()] = rest.join('=').trim();
-      return acc;
-    }, {} as Record<string, string>)
-    : {};
-
-  const refreshToken = cookies.refreshToken;
+export async function POST(request: NextRequest) {
+  const refreshToken = request.cookies.get("refreshToken")?.value;
 
   if (!refreshToken) {
     return NextResponse.json({ error: "Pas de refresh token" }, { status: 401 });

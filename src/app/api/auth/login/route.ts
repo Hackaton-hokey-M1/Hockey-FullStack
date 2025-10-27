@@ -17,13 +17,13 @@ export async function POST(request: Request) {
   const accessToken = data.session.access_token;
   const refreshToken = data.session.refresh_token;
 
-  const res = NextResponse.json({ message: "Connexion réussie" }, { status: 200 });
+  const res = NextResponse.json({ user: data.user }, { status: 200 });
 
   res.cookies.set("accessToken", accessToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
-    maxAge: 15 * 60,
+    maxAge: 15 * 60, // 15 minutes
     path: "/",
   });
 
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
-    maxAge: 7 * 24 * 60 * 60,
+    maxAge: 7 * 24 * 60 * 60, // 7 days
     path: "/",
   });
 

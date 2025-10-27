@@ -30,5 +30,19 @@
     "descriptionPlaceholder": "Décrivez votre groupe...",
     "createButton": "Créer le groupe",
     "cancel": "Annuler"
+  },
+  "JoinGroup": {
+    "title": "Rejoindre un groupe",
+    "subtitle": "Trouvez votre groupe et commencez à parier",
+    "hasInviteLink": "J'ai un lien d'invitation",
+    "inviteLinkLabel": "Lien d'invitation",
+    "inviteLinkPlaceholder": "Collez votre lien d'invitation ici...",
+    "joinWithLink": "Rejoindre avec le lien",
+    "publicGroups": "Groupes publics disponibles",
+    "members": "membres",
+    "member": "membre",
+    "noGroups": "Aucun groupe public disponible pour le moment",
+    "joinButton": "Rejoindre",
+    "back": "Retour"
   }
 }

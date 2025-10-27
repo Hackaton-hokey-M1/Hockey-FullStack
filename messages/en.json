@@ -30,5 +30,19 @@
     "descriptionPlaceholder": "Describe your group...",
     "createButton": "Create group",
     "cancel": "Cancel"
+  },
+  "JoinGroup": {
+    "title": "Join a group",
+    "subtitle": "Find your group and start betting",
+    "hasInviteLink": "I have an invite link",
+    "inviteLinkLabel": "Invite link",
+    "inviteLinkPlaceholder": "Paste your invite link here...",
+    "joinWithLink": "Join with link",
+    "publicGroups": "Available public groups",
+    "members": "members",
+    "member": "member",
+    "noGroups": "No public groups available at the moment",
+    "joinButton": "Join",
+    "back": "Back"
   }
 }

@@ -25,8 +25,8 @@ export default function GroupActions({
     if (onJoinGroup) {
       onJoinGroup();
     } else {
-      // TODO: Implémenter la logique pour rejoindre un groupe
-      console.log("Rejoindre un groupe");
+      // Rediriger vers la page de rejoindre un groupe
+      window.location.href = "/groups/join";
     }
   };
 

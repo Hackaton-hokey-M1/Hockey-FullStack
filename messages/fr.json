@@ -70,5 +70,48 @@
     "score": "Score",
     "viewGroup": "Voir le groupe",
     "inviteCode": "Code d'invitation"
+  },
+  "Footer": {
+    "description": "Pariez sur vos matchs de hockey préférés avec vos amis",
+    "quickLinks": "Liens rapides",
+    "home": "Accueil",
+    "matches": "Matchs",
+    "myGroups": "Mes groupes",
+    "createGroup": "Créer un groupe",
+    "joinGroup": "Rejoindre un groupe",
+    "legal": "Légal",
+    "privacy": "Confidentialité",
+    "terms": "Conditions d'utilisation",
+    "rights": "Tous droits réservés"
+  },
+  "Privacy": {
+    "title": "Politique de confidentialité",
+    "lastUpdate": "Dernière mise à jour",
+    "intro": "Chez HockeyBet, nous prenons très au sérieux la protection de vos données personnelles. Cette politique de confidentialité explique comment nous collectons, utilisons et protégeons vos informations.",
+    "section1Title": "Collecte des données",
+    "section1Content": "Nous collectons les informations que vous nous fournissez lors de votre inscription : pseudo, adresse e-mail et mot de passe. Ces données sont nécessaires pour créer et gérer votre compte.",
+    "section2Title": "Utilisation des données",
+    "section2Content": "Vos données sont utilisées uniquement pour vous fournir nos services : gestion de votre compte, participation aux groupes de paris, et amélioration de votre expérience utilisateur.",
+    "section3Title": "Protection des données",
+    "section3Content": "Nous mettons en œuvre des mesures de sécurité appropriées pour protéger vos informations personnelles contre tout accès non autorisé, modification, divulgation ou destruction.",
+    "section4Title": "Vos droits",
+    "section4Content": "Vous avez le droit d'accéder, de modifier ou de supprimer vos données personnelles à tout moment. Pour exercer ces droits, contactez-nous.",
+    "section5Title": "Cookies",
+    "section5Content": "Nous utilisons des cookies pour améliorer votre expérience sur notre site. Vous pouvez configurer votre navigateur pour refuser les cookies si vous le souhaitez."
+  },
+  "Terms": {
+    "title": "Conditions d'utilisation",
+    "lastUpdate": "Dernière mise à jour",
+    "intro": "En utilisant HockeyBet, vous acceptez les présentes conditions d'utilisation. Veuillez les lire attentivement.",
+    "section1Title": "Utilisation du service",
+    "section1Content": "HockeyBet est une plateforme de pronostics sportifs entre amis. Vous devez avoir au moins 18 ans pour utiliser ce service. Vous êtes responsable de maintenir la confidentialité de votre compte.",
+    "section2Title": "Règles de conduite",
+    "section2Content": "Vous vous engagez à utiliser le service de manière responsable et respectueuse. Tout comportement abusif, frauduleux ou inapproprié peut entraîner la suspension de votre compte.",
+    "section3Title": "Propriété intellectuelle",
+    "section3Content": "Tous les contenus présents sur HockeyBet (logo, design, textes) sont protégés par les droits de propriété intellectuelle et appartiennent à HockeyBet.",
+    "section4Title": "Limitation de responsabilité",
+    "section4Content": "HockeyBet est fourni 'tel quel'. Nous ne garantissons pas que le service sera toujours disponible ou exempt d'erreurs. Nous ne sommes pas responsables des pertes découlant de l'utilisation du service.",
+    "section5Title": "Modifications",
+    "section5Content": "Nous nous réservons le droit de modifier ces conditions à tout moment. Les modifications seront effectives dès leur publication sur le site."
   }
 }

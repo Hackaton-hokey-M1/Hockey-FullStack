@@ -7,6 +7,7 @@ import { ThemeProvider } from "next-themes";
 import { Geist, Geist_Mono } from "next/font/google";
 import { notFound } from "next/navigation";
 
+import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { routing } from "@/i18n/routing";
@@ -40,21 +41,24 @@ export default async function LocaleLayout({ children, params }: Props) {
   }
 
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning className="h-full">
       <head>
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} font-sans bg-linear-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950`}
+        className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased h-full m-0 p-0`}
       >
-        <AuthProvider>
-          <ThemeProvider attribute="class">
-            <NextIntlClientProvider>
-              <Navbar />
-              <div className="pt-40">{children}</div>
-            </NextIntlClientProvider>
-          </ThemeProvider>
-        </AuthProvider>
+        <div className="min-h-full flex flex-col bg-linear-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950">
+          <AuthProvider>
+            <ThemeProvider attribute="class">
+              <NextIntlClientProvider>
+                <Navbar />
+                <main className="flex-1 pt-40">{children}</main>
+                <Footer />
+              </NextIntlClientProvider>
+            </ThemeProvider>
+          </AuthProvider>
+        </div>
       </body>
     </html>
   );

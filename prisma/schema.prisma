@@ -1,19 +1,20 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider      = "prisma-client"
+  output        = "../src/generated/prisma"
+  binaryTargets = ["native", "debian-openssl-3.0.x", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
   provider  = "postgresql"
-  url       = env("DATABASE_URL")        // Accelerate pour le runtime
+  url       = env("DATABASE_URL") // Accelerate pour le runtime
   directUrl = env("DIRECT_DATABASE_URL") // URL directe pour les migrations
 }
 
 model User {
-  id       String   @id @default(uuid()) @db.Uuid
-  email    String   @unique
-  name     String?
-  password String   // Mot de passe hashé
+  id        String   @id @default(uuid()) @db.Uuid
+  email     String   @unique
+  name      String?
+  password  String // Mot de passe hashé
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -26,14 +27,14 @@ model User {
 }
 
 model Group {
-  id                Int             @id @default(autoincrement())
-  name              String
-  description       String?
-  visibility        GroupVisibility @default(PUBLIC)
-  competitionId     String // ID de la compétition depuis l'API externe
-  externalMatchId   String? // ID du match depuis l'API externe (pas de FK)
-  ownerId           String          @db.Uuid
-  inviteCode        String?         @unique // Pour les invitations en groupe privé
+  id              Int             @id @default(autoincrement())
+  name            String
+  description     String?
+  visibility      GroupVisibility @default(PUBLIC)
+  competitionId   String // ID de la compétition depuis l'API externe
+  externalMatchId String? // ID du match depuis l'API externe (pas de FK)
+  ownerId         String          @db.Uuid
+  inviteCode      String?         @unique // Pour les invitations en groupe privé
 
   // Règles de scoring personnalisables
   pointsExactScore    Int @default(3) // Points pour score exact
@@ -76,9 +77,9 @@ model Prediction {
   userId          String @db.Uuid
   groupId         Int
   externalMatchId String // ID du match depuis l'API externe
-  homeScore       Int    // Pronostic équipe domicile
-  awayScore       Int    // Pronostic équipe extérieur
-  points          Int?   // Points gagnés (null si match pas terminé)
+  homeScore       Int // Pronostic équipe domicile
+  awayScore       Int // Pronostic équipe extérieur
+  points          Int? // Points gagnés (null si match pas terminé)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -1,21 +1,50 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim())
+  : [];
 
 export function middleware(request: NextRequest) {
-  const isLoggedIn = request.cookies.get('auth_token')?.value
+  const origin = request.headers.get("origin");
+  const pathname = request.nextUrl.pathname;
+  const isAllowedOrigin = origin && allowedOrigins.includes(origin);
 
-  const protectedPaths = ['/dashboard']
-  const pathname = request.nextUrl.pathname
+  const response = NextResponse.next();
 
-  const isProtected = protectedPaths.some(path => pathname.startsWith(path))
+  const isLoggedIn = request.cookies.get("accessToken")?.value;
+  const protectedPaths = ["/dashboard"];
+  const isProtected = protectedPaths.some((path) =>
+    pathname.startsWith(path)
+  );
 
   if (isProtected && !isLoggedIn) {
-    return NextResponse.redirect(new URL('/login', request.url))
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  return NextResponse.next()
+  if (isAllowedOrigin) {
+    response.headers.set("Access-Control-Allow-Origin", origin);
+  }
+
+  response.headers.set(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, DELETE, OPTIONS"
+  );
+  response.headers.set(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization"
+  );
+
+  if (request.method === "OPTIONS") {
+    return new NextResponse(null, {
+      status: 204,
+      headers: response.headers,
+    });
+  }
+
+  return response;
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*'],
-}
+  matcher: ["/api/:path*", "/dashboard/:path*"],
+};

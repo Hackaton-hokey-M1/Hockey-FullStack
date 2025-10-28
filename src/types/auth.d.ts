@@ -11,14 +11,14 @@ export interface LoginCredentials {
 }
 
 export interface RegisterCredentials {
-  name: string;
+  pseudo: string;
   email: string;
   password: string;
-  confirmPassword: string;
 }
 
 export interface AuthContextType {
   user: User | null;
   login: (credentials: LoginCredentials) => Promise<void>;
+  register: (credentials: RegisterCredentials) => Promise<void>;
   logout: () => void;
 }

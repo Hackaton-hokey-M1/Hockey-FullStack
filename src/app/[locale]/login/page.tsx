@@ -4,35 +4,30 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { motion } from "framer-motion";
 import { useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form'
+import { z } from "zod";
+
+import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useAuth } from '@/contexts/AuthContext'
 import { loginSchema } from '@/lib/validation'
 
-
-type LoginForm = { email: string; password: string }
+export type LoginForm = z.infer<typeof loginSchema>
 
 export default function LoginPage() {
+  const { push } = useRouter();
   const { login } = useAuth()
   const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema)
   })
   const t = useTranslations('Login');
 
-  const onSubmit = (data: LoginForm) => {
-    login({ email: "test@test.com", password: 'Test User' })
-    console.log('Login avec :', data)
+  const onSubmit = async (data: LoginForm) => {
+    await login(data);
+    push('/')
   }
 
   return (
@@ -46,13 +41,13 @@ export default function LoginPage() {
       >
         <Card className="w-full max-w-sm">
           <CardHeader>
-            <CardTitle>{t('title')}</CardTitle>
+            <div className={"flex items-center justify-between"}>
+              <CardTitle>{t('title')}</CardTitle>
+              <Button variant="link" onClick={() => push('register')}>{t('signUp')}</Button>
+            </div>
             <CardDescription>
               {t('description')}
             </CardDescription>
-            <CardAction>
-              <Button variant="link">{t('signUp')}</Button>
-            </CardAction>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit(onSubmit)}>
@@ -60,7 +55,7 @@ export default function LoginPage() {
                 <div className="grid gap-2">
                   <Label htmlFor="email">Email</Label>
                   <Input
-                    {...register('email', { required: 'Email requis' })}
+                    {...register('email')}
                     id="email"
                     type="email"
                     placeholder="m@example.com"
@@ -79,7 +74,7 @@ export default function LoginPage() {
                     </a>
                   </div>
                   <Input
-                    {...register('password', { required: 'Mot de passe requis' })}
+                    {...register('password')}
                     id="password"
                     type="password"
                     required/>

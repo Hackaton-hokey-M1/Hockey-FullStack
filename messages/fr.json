@@ -10,6 +10,17 @@
     "signUp": "Inscrivez-vous",
     "forgotPassword": "Mot de passe oublié?"
   },
+  "Register": {
+    "title": "Créer un compte",
+    "pseudo": "Pseudo",
+    "email": "E-mail",
+    "password": "Mot de passe",
+    "submit": "S'inscrire",
+    "invalidEmail": "E-mail invalide",
+    "minPassword": "Minimum 6 caractères",
+    "description": "Remplissez les informations ci-dessous pour créer un nouveau compte",
+    "login": "Se connecter"
+  },
   "Navbar": {
     "home": "Accueil",
     "matches": "Matchs",

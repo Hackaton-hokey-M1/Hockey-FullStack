@@ -3,6 +3,7 @@ import { ReactNode } from "react";
 import type { Metadata } from "next";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { ThemeProvider } from "next-themes";
+import { Toaster } from "sonner";
 
 import { Geist, Geist_Mono } from "next/font/google";
 import { notFound } from "next/navigation";
@@ -52,6 +53,7 @@ export default async function LocaleLayout({ children, params }: Props) {
           <AuthProvider>
             <ThemeProvider attribute="class">
               <NextIntlClientProvider>
+                <Toaster position="top-right" richColors />
                 <Navbar />
                 <main className="flex-1 pt-40">{children}</main>
                 <Footer />

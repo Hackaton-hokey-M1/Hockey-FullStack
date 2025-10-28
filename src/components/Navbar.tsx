@@ -3,9 +3,8 @@
 import { useMemo, useState } from "react";
 
 import { motion, useScroll, useTransform } from "framer-motion";
-import { Home, LogIn, Menu, Trophy, X } from "lucide-react";
+import { Home, LogIn, Menu, Trophy, Users, X } from "lucide-react";
 import { useTranslations } from "next-intl";
-
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -16,7 +15,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
@@ -33,10 +32,13 @@ export default function Navbar() {
 
   const navItems = useMemo(
     () => [
-      { label: t('home'), href: '/', icon: Home },
-      { label: t('matches'), href: '/matches', icon: Trophy },
+      { label: t("home"), href: "/", icon: Home },
+      { label: t("matches"), href: "/matches", icon: Trophy },
+      ...(user
+        ? [{ label: t("myGroups"), href: "/my-groups", icon: Users }]
+        : []),
     ],
-    [t]
+    [t, user]
   );
 
   const toggleMobileMenu = () => {
@@ -73,7 +75,7 @@ export default function Navbar() {
                   transition={{ duration: 0.6, ease: "easeInOut" }}
                   className="w-10 h-10 bg-linear-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/50"
                 >
-                  <Trophy className="w-5 h-5 text-white"/>
+                  <Trophy className="w-5 h-5 text-white" />
                 </motion.div>
                 <motion.span
                   className="text-xl font-bold bg-linear-to-r from-blue-600 to-cyan-600 dark:from-blue-400 dark:to-cyan-400 bg-clip-text text-transparent"
@@ -115,7 +117,7 @@ export default function Navbar() {
                             />
                           )}
                           <span className="relative z-10 flex items-center gap-2">
-                            <Icon className="w-4 h-4"/>
+                            <Icon className="w-4 h-4" />
                             {label}
                           </span>
                         </Button>
@@ -127,7 +129,7 @@ export default function Navbar() {
 
               {/* Actions Desktop */}
               <div className="hidden md:flex items-center gap-3">
-                <ThemeToggleButton/>
+                <ThemeToggleButton />
 
                 <motion.div
                   whileHover={{ scale: 1.05 }}
@@ -140,20 +142,30 @@ export default function Navbar() {
                           size="sm"
                           className="rounded-full px-4 py-2 font-medium bg-white/20 dark:bg-gray-900/30 backdrop-blur-md border border-blue-400 text-blue-600 dark:text-blue-400 shadow-md shadow-blue-500/20 flex items-center hover:shadow-blue-500/60 hover:scale-105 transition-all"
                         >
-        <span
-          className="w-5 h-5 mr-2 flex items-center justify-center rounded-full bg-blue-600 text-white">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-3.5 h-3.5"
-               fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-            <circle cx="12" cy="7" r="4"/>
-          </svg>
-        </span>
+                          <span className="w-5 h-5 mr-2 flex items-center justify-center rounded-full bg-blue-600 text-white">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 24 24"
+                              className="w-3.5 h-3.5"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                              <circle cx="12" cy="7" r="4" />
+                            </svg>
+                          </span>
                           Profil
                         </Button>
                       </DropdownMenuTrigger>
 
-                      <DropdownMenuContent align="end" sideOffset={8}
-                                           className="w-48 bg-white/20 dark:bg-gray-900/30 backdrop-blur-md border border-blue-400 shadow-lg shadow-blue-500/30">
+                      <DropdownMenuContent
+                        align="end"
+                        sideOffset={8}
+                        className="w-48 bg-white/20 dark:bg-gray-900/30 backdrop-blur-md border border-blue-400 shadow-lg shadow-blue-500/30"
+                      >
                         <DropdownMenuItem
                           className="text-red-600 dark:text-red-400 hover:bg-red-600/30 dark:hover:bg-red-500/30 hover:backdrop-blur-md hover:shadow-red-500/50 transition-all"
                           onClick={logout}
@@ -168,7 +180,7 @@ export default function Navbar() {
                       onClick={() => push("/login")}
                       className="rounded-full px-6 font-semibold bg-linear-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-lg shadow-blue-500/30"
                     >
-                      <LogIn className="w-4 h-4 mr-2"/>
+                      <LogIn className="w-4 h-4 mr-2" />
                       {t("login")}
                     </Button>
                   )}
@@ -182,9 +194,9 @@ export default function Navbar() {
                 className="md:hidden p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
               >
                 {mobileMenuOpen ? (
-                  <X className="w-6 h-6 text-gray-700 dark:text-gray-300"/>
+                  <X className="w-6 h-6 text-gray-700 dark:text-gray-300" />
                 ) : (
-                  <Menu className="w-6 h-6 text-gray-700 dark:text-gray-300"/>
+                  <Menu className="w-6 h-6 text-gray-700 dark:text-gray-300" />
                 )}
               </motion.button>
             </div>
@@ -232,7 +244,7 @@ export default function Navbar() {
                           : "hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
                       )}
                     >
-                      <Icon className="w-5 h-5"/>
+                      <Icon className="w-5 h-5" />
                       <span className="font-medium">{label}</span>
                     </motion.div>
                   </Link>
@@ -240,7 +252,7 @@ export default function Navbar() {
               );
             })}
 
-            <div className="h-px bg-gray-200 dark:bg-gray-700"/>
+            <div className="h-px bg-gray-200 dark:bg-gray-700" />
 
             {/* Actions */}
             <div className="space-y-3">
@@ -254,17 +266,24 @@ export default function Navbar() {
               >
                 {user ? (
                   <div className="flex flex-col gap-2">
-                    <Link href="/profile" onClick={() => setMobileMenuOpen(false)}>
-                      <Button
-                        className="w-full justify-start rounded-2xl p-4 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-100 shadow-sm flex items-center"
-                      >
-                        <span
-                          className="w-5 h-5 mr-3 flex items-center justify-center rounded-full bg-blue-600 text-white">
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-3.5 h-3.5"
-                               fill="none"
-                               stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                            <circle cx="12" cy="7" r="4"/>
+                    <Link
+                      href="/profile"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <Button className="w-full justify-start rounded-2xl p-4 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-100 shadow-sm flex items-center">
+                        <span className="w-5 h-5 mr-3 flex items-center justify-center rounded-full bg-blue-600 text-white">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            className="w-3.5 h-3.5"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
                           </svg>
                         </span>
                         Profil
@@ -289,7 +308,7 @@ export default function Navbar() {
                     }}
                     className="w-full justify-start rounded-2xl p-4 bg-linear-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-lg"
                   >
-                    <LogIn className="w-5 h-5 mr-3"/>
+                    <LogIn className="w-5 h-5 mr-3" />
                     {t("login")}
                   </Button>
                 )}
@@ -308,7 +327,7 @@ export default function Navbar() {
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   Thème
                 </span>
-                <ThemeToggleButton/>
+                <ThemeToggleButton />
               </motion.div>
             </div>
           </div>

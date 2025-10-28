@@ -131,42 +131,38 @@ export default function Navbar() {
               <div className="hidden md:flex items-center gap-3">
                 <ThemeToggleButton/>
 
-                <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                   {user ? (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button
-                          size="sm"
-                          className="rounded-full px-4 py-2 font-medium bg-white/20 dark:bg-gray-900/30 backdrop-blur-md border border-blue-400 text-blue-600 dark:text-blue-400 shadow-md shadow-blue-500/20 flex items-center hover:shadow-blue-500/60 hover:scale-105 transition-all"
-                        >
-        <span
-          className="w-5 h-5 mr-2 flex items-center justify-center rounded-full bg-blue-600 text-white">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-3.5 h-3.5"
-               fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-            <circle cx="12" cy="7" r="4"/>
-          </svg>
-        </span>
-                          Profil
-                        </Button>
+                          <Button size="sm" className="rounded-full px-4 py-2 font-medium bg-white/20 dark:bg-gray-900/30 backdrop-blur-md border border-blue-400 text-blue-600 dark:text-blue-400 shadow-md shadow-blue-500/20 flex items-center hover:shadow-blue-500/60 hover:scale-105 transition-all">
+                            <span className="w-5 h-5 mr-2 flex items-center justify-center rounded-full bg-blue-600 text-white" aria-hidden>
+                                {(user.name?.[0] || "P").toUpperCase()}
+                            </span>
+
+                            <span className="truncate max-w-[160px]">
+                                {user.name?.trim() || "Profil"}
+                            </span>
+                          </Button>
                       </DropdownMenuTrigger>
 
-                      <DropdownMenuContent align="end" sideOffset={8}
-                                           className="w-48 bg-white/20 dark:bg-gray-900/30 backdrop-blur-md border border-blue-400 shadow-lg shadow-blue-500/30">
+                      <DropdownMenuContent
+                          align="end"
+                          sideOffset={8}
+                          className="w-48 bg-white/20 dark:bg-gray-900/30 backdrop-blur-md border border-blue-400 shadow-lg shadow-blue-500/30">
+                          <DropdownMenuItem asChild>
+                              <Link href={ln("/profil")}>Modifier mon profil</Link>
+                          </DropdownMenuItem>
                           <DropdownMenuItem
                               onClick={() => push(ln("/profil"))}
                               className="hover:bg-blue-600/30 dark:hover:bg-blue-500/30 transition-all"
                           >
-                              Mon profil
                           </DropdownMenuItem>
 
                           <DropdownMenuItem
-                          className="text-red-600 dark:text-red-400 hover:bg-red-600/30 dark:hover:bg-red-500/30 hover:backdrop-blur-md hover:shadow-red-500/50 transition-all"
-                          onClick={logout}
-                        >
+                            className="text-red-600 dark:text-red-400 hover:bg-red-600/30 dark:hover:bg-red-500/30 hover:backdrop-blur-md hover:shadow-red-500/50 transition-all"
+                            onClick={logout}
+                          >
                           Déconnexion
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -174,7 +170,7 @@ export default function Navbar() {
                   ) : (
                     <Button
                       size="sm"
-                      onClick={() => push("/login")}
+                      onClick={() => push(ln("/login"))}
                       className="rounded-full px-6 font-semibold bg-linear-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-lg shadow-blue-500/30"
                     >
                       <LogIn className="w-4 h-4 mr-2"/>
@@ -263,20 +259,17 @@ export default function Navbar() {
               >
                 {user ? (
                   <div className="flex flex-col gap-2">
-                    <Link href="/profile" onClick={() => setMobileMenuOpen(false)}>
+                    <Link href={ln("/profil")} onClick={() => setMobileMenuOpen(false)}>
                       <Button
                         className="w-full justify-start rounded-2xl p-4 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-100 shadow-sm flex items-center"
                       >
                         <span
                           className="w-5 h-5 mr-3 flex items-center justify-center rounded-full bg-blue-600 text-white">
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-3.5 h-3.5"
-                               fill="none"
-                               stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                            <circle cx="12" cy="7" r="4"/>
-                          </svg>
+                            {(user.name?.[0] || "P").toUpperCase()}
                         </span>
-                        Profil
+                          <span className="truncate max-w-[200px]">
+                            {user.name?.trim() || "Profil"}
+                          </span>
                       </Button>
                     </Link>
 
@@ -293,8 +286,8 @@ export default function Navbar() {
                 ) : (
                   <Button
                     onClick={() => {
-                      push("/login");
-                      setMobileMenuOpen(false);
+                        push(ln("/login"));
+                        setMobileMenuOpen(false);
                     }}
                     className="w-full justify-start rounded-2xl p-4 bg-linear-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-lg"
                   >

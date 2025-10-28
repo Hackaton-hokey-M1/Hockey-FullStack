@@ -7,13 +7,13 @@ import { useLocale } from "next-intl";
 
 import { useRouter } from "next/navigation";
 
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/contexts/AuthContext";
 
 type UserDTO = { id: number; email: string; name: string; createdAt?: string; updatedAt?: string };
 
-export default function ProfilePage() {
+export default function ProfilPage() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -21,12 +21,13 @@ export default function ProfilePage() {
     const [name, setName] = useState("");
     const locale = useLocale();
     const router = useRouter();
+    const { setUser: updateAuthUser } = useAuth();
 
     useEffect(() => {
         (async () => {
             try {
                 setError(null);
-                const res = await fetch("/api/profile", { cache: "no-store" });
+                const res = await fetch("/api/profil", { cache: "no-store" });
                 if (!res.ok) throw new Error("Unauthorized");
                 const data = await res.json();
                 setUser(data.user);
@@ -45,7 +46,7 @@ export default function ProfilePage() {
         try {
             setSaving(true);
             setError(null);
-            const res = await fetch("/api/profile", {
+            const res = await fetch("/api/profil", {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ name }),
@@ -56,6 +57,7 @@ export default function ProfilePage() {
             }
             const j = await res.json();
             setUser(j.user);
+            updateAuthUser(j.user);
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : "Erreur";
             setError(message);

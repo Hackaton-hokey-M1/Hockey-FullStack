@@ -1,18 +1,75 @@
+import bcrypt from "bcryptjs";
+
 import { NextResponse } from "next/server";
 
-import { supabase } from "@/lib/supabase";
+import { prisma } from "@/lib/prisma";
 
 export async function POST(request: Request) {
-  const { email, password } = await request.json();
+  const body = await request.json();
+  const { email, password, pseudo, name } = body;
 
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-  });
+  // Accepte soit 'pseudo' soit 'name'
+  const userName = pseudo || name;
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+  // Validation des données
+  if (!email || !password || !userName) {
+    return NextResponse.json(
+      { error: "Email, password, and name (or pseudo) are required" },
+      { status: 400 }
+    );
   }
 
-  return NextResponse.json({ user: data.user }, { status: 201 });
+  try {
+    // Vérifier si l'utilisateur existe déjà
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (existingUser) {
+      return NextResponse.json(
+        { error: "User already exists" },
+        { status: 400 }
+      );
+    }
+
+    // Hasher le mot de passe
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Créer l'utilisateur dans la base de données
+    const user = await prisma.user.create({
+      data: {
+        email: email,
+        name: userName,
+        password: hashedPassword,
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        createdAt: true,
+      },
+    });
+
+    return NextResponse.json(
+      {
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+        },
+      },
+      { status: 201 }
+    );
+  } catch (error: unknown) {
+    console.error("Registration error:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json(
+      {
+        error: "An unexpected error occurred",
+        details: errorMessage,
+      },
+      { status: 500 }
+    );
+  }
 }

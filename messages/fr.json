@@ -40,6 +40,10 @@
     "privateDescription": "Seuls les membres invités peuvent rejoindre",
     "description": "Description (optionnel)",
     "descriptionPlaceholder": "Décrivez votre groupe...",
+    "matchSelection": "Match associé",
+    "matchSelectionPlaceholder": "Sélectionnez un match (optionnel)",
+    "noMatch": "Aucun match",
+    "loadingMatches": "Chargement des matchs...",
     "createButton": "Créer le groupe",
     "cancel": "Annuler"
   },

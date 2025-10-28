@@ -5,6 +5,7 @@ export interface CreateGroupInput {
   description?: string;
   visibility: "PUBLIC" | "PRIVATE";
   competitionId?: string;
+  externalMatchId?: string;
 }
 
 export interface JoinGroupByCodeInput {
@@ -17,6 +18,7 @@ export interface Group {
   description: string | null;
   visibility: "PUBLIC" | "PRIVATE";
   competitionId: string;
+  externalMatchId?: string | null;
   ownerId: string;
   inviteCode: string | null;
   membersCount: number;

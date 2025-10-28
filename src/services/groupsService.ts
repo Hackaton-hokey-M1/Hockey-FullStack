@@ -10,6 +10,7 @@ export type PublicGroup = {
   visibility: GroupVisibility;
   membersCount: number;
   competitionId: string;
+  externalMatchId?: string | null;
 };
 
 export type GroupWithDetails = {
@@ -18,6 +19,7 @@ export type GroupWithDetails = {
   description: string | null;
   visibility: GroupVisibility;
   competitionId: string;
+  externalMatchId?: string | null;
   ownerId: string;
   inviteCode: string | null;
   createdAt: Date;
@@ -38,6 +40,7 @@ export const groupsService = {
     description?: string;
     visibility: "PUBLIC" | "PRIVATE";
     competitionId: string;
+    externalMatchId?: string;
     ownerId: string;
   }) {
     // Générer un code d'invitation pour les groupes privés
@@ -50,6 +53,7 @@ export const groupsService = {
         description: input.description || null,
         visibility: input.visibility as GroupVisibility,
         competitionId: input.competitionId,
+        externalMatchId: input.externalMatchId || null,
         ownerId: input.ownerId,
         inviteCode,
       },
@@ -89,6 +93,7 @@ export const groupsService = {
       description: group.description,
       visibility: group.visibility,
       competitionId: group.competitionId,
+      externalMatchId: group.externalMatchId,
       membersCount: group._count.members,
     }));
   },
@@ -121,6 +126,7 @@ export const groupsService = {
       description: group.description,
       visibility: group.visibility,
       competitionId: group.competitionId,
+      externalMatchId: group.externalMatchId,
       ownerId: group.ownerId,
       inviteCode: group.inviteCode,
       createdAt: group.createdAt,

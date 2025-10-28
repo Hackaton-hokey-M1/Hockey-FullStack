@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Copy, Crown, Trophy, Users } from "lucide-react";
 import { useTranslations } from "next-intl";
+
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";

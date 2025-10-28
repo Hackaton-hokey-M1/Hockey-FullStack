@@ -68,3 +68,10 @@ export const getMyGroups = async (): Promise<{ groups: UserGroup[] }> => {
   const response = await privateApi.get("/groups/my-groups");
   return response.data;
 };
+
+export const getUsersInGroup = async (
+  groupId: number
+): Promise<{ group: Group }> => {
+  const response = await privateApi.get(`/groups/${groupId}/users`);
+  return response.data;
+};

@@ -111,9 +111,9 @@ export const groupsService = {
         },
         members: userId
           ? {
-              where: { userId },
-              select: { userId: true },
-            }
+            where: { userId },
+            select: { userId: true },
+          }
           : false,
       },
     });
@@ -252,4 +252,23 @@ export const groupsService = {
       isOwner: membership.group.ownerId === userId,
     }));
   },
+
+  async allUserInGroup(
+    groupId: number
+  ) {
+    const members = await prisma.groupMember.findMany({
+      where: { groupId },
+      select: {
+        userId: true,
+      },
+    });
+
+    return prisma.user.findMany({
+      where: { id: { in: members.map((m) => m.userId) } },
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+  }
 };

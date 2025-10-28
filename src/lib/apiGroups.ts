@@ -5,6 +5,7 @@ export interface CreateGroupInput {
   description?: string;
   visibility: "PUBLIC" | "PRIVATE";
   competitionId?: string;
+  externalMatchId?: string;
 }
 
 export interface JoinGroupByCodeInput {
@@ -17,8 +18,9 @@ export interface Group {
   description: string | null;
   visibility: "PUBLIC" | "PRIVATE";
   competitionId: string;
+  externalMatchId?: string | null;
   ownerId: string;
-  inviteCode: string | null;
+  inviteCode?: string | null;
   membersCount: number;
   isOwner?: boolean;
   isMember?: boolean;
@@ -66,5 +68,12 @@ export const joinGroupByCode = async (data: JoinGroupByCodeInput) => {
 // Récupérer les groupes de l'utilisateur connecté
 export const getMyGroups = async (): Promise<{ groups: UserGroup[] }> => {
   const response = await privateApi.get("/groups/my-groups");
+  return response.data;
+};
+
+export const getUsersInGroup = async (
+  groupId: number
+): Promise<{ group: Group }> => {
+  const response = await privateApi.get(`/groups/${groupId}/users`);
   return response.data;
 };

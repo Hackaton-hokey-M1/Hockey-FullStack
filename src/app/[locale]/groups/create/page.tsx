@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { motion } from "framer-motion";
 import {
@@ -14,24 +14,60 @@ import {
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { createGroup } from "@/lib/apiGroups";
+import { matchService } from "@/services/matchService";
+import type { Match } from "@/types/match";
 
 export default function CreateGroupPage() {
   const t = useTranslations("CreateGroup");
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [formData, setFormData] = useState({
     name: "",
     visibility: "public" as "public" | "private",
     description: "",
+    externalMatchId: "" as string,
   });
+  const [matches, setMatches] = useState<Match[]>([]);
+  const [loadingMatches, setLoadingMatches] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  // Charger les matchs et pré-remplir si matchId est fourni dans l'URL
+  useEffect(() => {
+    const loadMatches = async () => {
+      try {
+        setLoadingMatches(true);
+        const allMatches = await matchService.getAllMatches();
+        setMatches(allMatches);
+
+        // Pré-remplir l'externalMatchId si fourni dans l'URL
+        const matchIdParam = searchParams.get("matchId");
+        if (matchIdParam) {
+          setFormData((prev) => ({ ...prev, externalMatchId: matchIdParam }));
+        }
+      } catch (err) {
+        console.error("Erreur lors du chargement des matchs:", err);
+      } finally {
+        setLoadingMatches(false);
+      }
+    };
+
+    loadMatches();
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,6 +80,10 @@ export default function CreateGroupPage() {
         name: formData.name,
         description: formData.description || undefined,
         visibility: formData.visibility.toUpperCase() as "PUBLIC" | "PRIVATE",
+        externalMatchId:
+          formData.externalMatchId && formData.externalMatchId !== "none"
+            ? formData.externalMatchId
+            : undefined,
       });
 
       setSuccess(`Groupe "${response.group.name}" créé avec succès !`);
@@ -295,11 +335,50 @@ export default function CreateGroupPage() {
               />
             </motion.div>
 
+            {/* Match Selection */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.6 }}
+              className="space-y-2"
+            >
+              <Label htmlFor="match" className="text-lg font-semibold">
+                {t("matchSelection")}
+              </Label>
+              {loadingMatches ? (
+                <div className="h-12 rounded-2xl bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-gray-300 dark:border-gray-600 flex items-center justify-center">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {t("loadingMatches")}
+                  </p>
+                </div>
+              ) : (
+                <Select
+                  value={formData.externalMatchId}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, externalMatchId: value })
+                  }
+                >
+                  <SelectTrigger className="h-12 rounded-2xl bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 transition-all">
+                    <SelectValue placeholder={t("matchSelectionPlaceholder")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">{t("noMatch")}</SelectItem>
+                    {matches.map((match) => (
+                      <SelectItem key={match.id} value={match.id}>
+                        {match.homeTeam.name} vs {match.awayTeam.name} -{" "}
+                        {new Date(match.date).toLocaleDateString()}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </motion.div>
+
             {/* Buttons */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6 }}
+              transition={{ delay: 0.7 }}
               className="flex flex-col sm:flex-row gap-4 pt-4"
             >
               <Button

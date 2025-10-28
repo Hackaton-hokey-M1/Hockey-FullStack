@@ -40,6 +40,10 @@
     "privateDescription": "Only invited members can join",
     "description": "Description (optional)",
     "descriptionPlaceholder": "Describe your group...",
+    "matchSelection": "Associated match",
+    "matchSelectionPlaceholder": "Select a match (optional)",
+    "noMatch": "No match",
+    "loadingMatches": "Loading matches...",
     "createButton": "Create group",
     "cancel": "Cancel"
   },

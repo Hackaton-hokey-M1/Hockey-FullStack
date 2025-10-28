@@ -36,7 +36,8 @@ export async function POST(request: NextRequest) {
 
     // Récupérer les données du corps de la requête
     const body = await request.json();
-    const { name, description, visibility, competitionId } = body;
+    const { name, description, visibility, competitionId, externalMatchId } =
+      body;
 
     // Validation des champs
     if (!name || !name.trim()) {
@@ -63,6 +64,7 @@ export async function POST(request: NextRequest) {
       description: description?.trim(),
       visibility,
       competitionId: defaultCompetitionId,
+      externalMatchId: externalMatchId || undefined,
       ownerId: payload.userId,
     });
 
@@ -76,6 +78,7 @@ export async function POST(request: NextRequest) {
           visibility: group.visibility,
           inviteCode: group.inviteCode,
           competitionId: group.competitionId,
+          externalMatchId: group.externalMatchId,
         },
       },
       { status: 201 }

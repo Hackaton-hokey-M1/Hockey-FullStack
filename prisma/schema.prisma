@@ -5,7 +5,8 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
-  url       = env("DATABASE_URL")
+  url       = env("DATABASE_URL")        // Accelerate pour le runtime
+  directUrl = env("DIRECT_DATABASE_URL") // URL directe pour les migrations
 }
 
 model User {
@@ -25,13 +26,14 @@ model User {
 }
 
 model Group {
-  id            Int             @id @default(autoincrement())
-  name          String
-  description   String?
-  visibility    GroupVisibility @default(PUBLIC)
-  competitionId String // ID de la compétition depuis l'API externe
-  ownerId       String          @db.Uuid
-  inviteCode    String?         @unique // Pour les invitations en groupe privé
+  id                Int             @id @default(autoincrement())
+  name              String
+  description       String?
+  visibility        GroupVisibility @default(PUBLIC)
+  competitionId     String // ID de la compétition depuis l'API externe
+  externalMatchId   String? // ID du match depuis l'API externe (pas de FK)
+  ownerId           String          @db.Uuid
+  inviteCode        String?         @unique // Pour les invitations en groupe privé
 
   // Règles de scoring personnalisables
   pointsExactScore    Int @default(3) // Points pour score exact
@@ -49,6 +51,7 @@ model Group {
 
   @@index([competitionId])
   @@index([inviteCode])
+  @@index([externalMatchId])
 }
 
 model GroupMember {
@@ -68,36 +71,14 @@ model GroupMember {
   @@index([groupId, score]) // Pour le classement
 }
 
-model Match {
-  id            Int         @id @default(autoincrement())
-  externalId    String      @unique // ID du match depuis l'API externe
-  competitionId String // ID de la compétition
-  homeTeam      String
-  awayTeam      String
-  homeScore     Int?
-  awayScore     Int?
-  status        MatchStatus @default(SCHEDULED)
-  startTime     DateTime
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  predictions Prediction[]
-
-  @@index([competitionId])
-  @@index([status])
-  @@index([startTime])
-}
-
 model Prediction {
-  id        Int    @id @default(autoincrement())
-  userId    String @db.Uuid
-  groupId   Int
-  matchId   Int
-  homeScore Int // Pronostic équipe domicile
-  awayScore Int // Pronostic équipe extérieur
-  points    Int? // Points gagnés (null si match pas terminé)
+  id              Int    @id @default(autoincrement())
+  userId          String @db.Uuid
+  groupId         Int
+  externalMatchId String // ID du match depuis l'API externe
+  homeScore       Int    // Pronostic équipe domicile
+  awayScore       Int    // Pronostic équipe extérieur
+  points          Int?   // Points gagnés (null si match pas terminé)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -105,10 +86,10 @@ model Prediction {
   // Relations
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, groupId, matchId]) // Un seul pronostic par utilisateur/groupe/match
-  @@index([groupId, matchId])
+  @@unique([userId, groupId, externalMatchId]) // Un seul pronostic par utilisateur/groupe/match
+  @@index([groupId, externalMatchId])
+  @@index([externalMatchId]) // Pour récupérer tous les pronostics d'un match
 }
 
 model Invitation {
@@ -139,14 +120,6 @@ enum GroupVisibility {
 enum MemberRole {
   ADMIN
   MEMBER
-}
-
-enum MatchStatus {
-  SCHEDULED // Match programmé
-  LIVE // Match en cours
-  FINISHED // Match terminé
-  POSTPONED // Match reporté
-  CANCELLED // Match annulé
 }
 
 enum InvitationStatus {

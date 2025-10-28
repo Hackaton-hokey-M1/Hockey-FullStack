@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { motion } from "framer-motion";
 import {
@@ -55,9 +55,7 @@ export default function GroupPage() {
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [loading, setLoading] = useState(true);
   const [copiedCode, setCopiedCode] = useState(false);
-  const [previousMatchStatus, setPreviousMatchStatus] = useState<string | null>(
-    null
-  );
+  const previousMatchStatusRef = useRef<string | null>(null);
 
   // Utiliser le contexte SSE pour les mises à jour en temps réel
   const { applyUpdateToMatch, liveUpdates } = useMatchesLive();
@@ -132,6 +130,28 @@ export default function GroupPage() {
     fetchGroupData();
   }, [params?.id]);
 
+  // Callback pour rafraîchir les données après mise à jour des scores
+  const handleScoresUpdated = useCallback(async () => {
+    const idParam = params?.id;
+    if (!idParam) return;
+    const id = Array.isArray(idParam) ? Number(idParam[0]) : Number(idParam);
+    if (Number.isNaN(id)) return;
+
+    try {
+      const [membersResponse, predictionsResponse] = await Promise.all([
+        getUsersInGroup(id),
+        fetch(`/api/groups/${id}/predictions`).then((r) => r.json()),
+      ]);
+
+      setMembers(membersResponse.users);
+      if (predictionsResponse.predictions) {
+        setPredictions(predictionsResponse.predictions);
+      }
+    } catch (error) {
+      console.error("Erreur lors du rechargement des données:", error);
+    }
+  }, [params?.id]);
+
   // Appliquer les mises à jour SSE au match du groupe
   useEffect(() => {
     if (!group?.match) return;
@@ -143,6 +163,7 @@ export default function GroupPage() {
       );
       setGroup((prev) => (prev ? { ...prev, match: updatedMatch } : null));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [liveUpdates, group?.match?.id, applyUpdateToMatch]);
 
   // Détecter quand un match passe à "finished" et mettre à jour automatiquement les scores
@@ -153,8 +174,8 @@ export default function GroupPage() {
 
     // Si le match vient de se terminer (passage de "live" à "finished")
     if (
-      previousMatchStatus &&
-      previousMatchStatus !== "finished" &&
+      previousMatchStatusRef.current &&
+      previousMatchStatusRef.current !== "finished" &&
       currentStatus === "finished"
     ) {
       console.log(
@@ -181,7 +202,6 @@ export default function GroupPage() {
             console.log(
               "[GroupPage] Scores de prédictions mis à jour avec succès"
             );
-            // Rafraîchir les données du groupe
             await handleScoresUpdated();
           } else {
             console.error(
@@ -197,31 +217,9 @@ export default function GroupPage() {
     }
 
     // Mettre à jour le statut précédent
-    setPreviousMatchStatus(currentStatus);
-  }, [group?.match?.status, group?.match?.id, group?.id]);
-
-  // Callback pour rafraîchir les données après mise à jour des scores
-  const handleScoresUpdated = async () => {
-    const idParam = params?.id;
-    if (!idParam) return;
-    const id = Array.isArray(idParam) ? Number(idParam[0]) : Number(idParam);
-    if (Number.isNaN(id)) return;
-
-    // Recharger les membres et les prédictions
-    try {
-      const [membersResponse, predictionsResponse] = await Promise.all([
-        getUsersInGroup(id),
-        fetch(`/api/groups/${id}/predictions`).then((r) => r.json()),
-      ]);
-
-      setMembers(membersResponse.users);
-      if (predictionsResponse.predictions) {
-        setPredictions(predictionsResponse.predictions);
-      }
-    } catch (error) {
-      console.error("Erreur lors du rechargement des données:", error);
-    }
-  };
+    previousMatchStatusRef.current = currentStatus;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [group?.match?.status, group?.match?.id, group?.id, handleScoresUpdated]);
 
   // Callback pour rafraîchir après action de gestion de membre
   const handleMembersUpdated = async () => {

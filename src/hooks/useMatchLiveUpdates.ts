@@ -43,6 +43,7 @@ export function useMatchLiveUpdates({
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectDelayRef = useRef(INITIAL_RECONNECT_DELAY);
   const reconnectAttemptsRef = useRef(0);
+  const connectFnRef = useRef<(() => void) | null>(null);
 
   /**
    * Nettoie les ressources
@@ -62,29 +63,6 @@ export function useMatchLiveUpdates({
     setIsConnected(false);
     setIsReconnecting(false);
   }, []);
-
-  /**
-   * Tente de se reconnecter avec backoff exponentiel
-   */
-  const scheduleReconnect = useCallback(() => {
-    if (!enabled) return;
-
-    setIsReconnecting(true);
-    reconnectAttemptsRef.current += 1;
-
-    const delay = Math.min(
-      reconnectDelayRef.current * Math.pow(2, reconnectAttemptsRef.current - 1),
-      MAX_RECONNECT_DELAY
-    );
-
-    console.log(
-      `[SSE Hook] Tentative de reconnexion ${reconnectAttemptsRef.current} dans ${delay}ms`
-    );
-
-    reconnectTimeoutRef.current = setTimeout(() => {
-      connect();
-    }, delay);
-  }, [enabled]);
 
   /**
    * Établit la connexion SSE
@@ -155,7 +133,24 @@ export function useMatchLiveUpdates({
         // Nettoyer et programmer une reconnexion
         if (eventSource.readyState === EventSource.CLOSED) {
           cleanup();
-          scheduleReconnect();
+
+          // Programmer une reconnexion
+          setIsReconnecting(true);
+          reconnectAttemptsRef.current += 1;
+
+          const delay = Math.min(
+            reconnectDelayRef.current *
+              Math.pow(2, reconnectAttemptsRef.current - 1),
+            MAX_RECONNECT_DELAY
+          );
+
+          console.log(
+            `[SSE Hook] Tentative de reconnexion ${reconnectAttemptsRef.current} dans ${delay}ms`
+          );
+
+          reconnectTimeoutRef.current = setTimeout(() => {
+            connectFnRef.current?.();
+          }, delay);
         }
       };
 
@@ -165,17 +160,49 @@ export function useMatchLiveUpdates({
         "[SSE Hook] Erreur lors de l'établissement de la connexion:",
         error
       );
-      scheduleReconnect();
+      // Programmer une reconnexion en cas d'erreur
+      setIsReconnecting(true);
+      reconnectAttemptsRef.current += 1;
+
+      const delay = Math.min(
+        reconnectDelayRef.current *
+          Math.pow(2, reconnectAttemptsRef.current - 1),
+        MAX_RECONNECT_DELAY
+      );
+
+      reconnectTimeoutRef.current = setTimeout(() => {
+        connectFnRef.current?.();
+      }, delay);
     }
-  }, [
-    enabled,
-    cleanup,
-    scheduleReconnect,
-    onConnect,
-    onDisconnect,
-    onMatchUpdate,
-    onError,
-  ]);
+  }, [enabled, cleanup, onConnect, onDisconnect, onMatchUpdate, onError]);
+
+  // Stocker la référence de connect dans le ref (dans un effet)
+  useEffect(() => {
+    connectFnRef.current = connect;
+  }, [connect]);
+
+  /**
+   * Tente de se reconnecter avec backoff exponentiel
+   */
+  const scheduleReconnect = useCallback(() => {
+    if (!enabled) return;
+
+    setIsReconnecting(true);
+    reconnectAttemptsRef.current += 1;
+
+    const delay = Math.min(
+      reconnectDelayRef.current * Math.pow(2, reconnectAttemptsRef.current - 1),
+      MAX_RECONNECT_DELAY
+    );
+
+    console.log(
+      `[SSE Hook] Tentative de reconnexion ${reconnectAttemptsRef.current} dans ${delay}ms`
+    );
+
+    reconnectTimeoutRef.current = setTimeout(() => {
+      connectFnRef.current?.();
+    }, delay);
+  }, [enabled]);
 
   /**
    * Déconnecte manuellement le SSE

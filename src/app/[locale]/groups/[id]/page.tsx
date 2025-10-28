@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { motion } from "framer-motion";
 import {
@@ -25,6 +25,7 @@ import {
 } from "@/lib/apiGroups";
 import { matchService } from "@/services/matchService";
 import type { Match } from "@/types/match";
+import { calculateLivePoints } from "@/utils/calculateLivePoints";
 
 interface Prediction {
   id: number;
@@ -233,6 +234,87 @@ export default function GroupPage() {
       setTimeout(() => setCopiedCode(false), 2000);
     }
   };
+
+  // Calculer les points en temps réel si le match a un score
+  const { liveMembers, livePredictions, hasLiveScores } = useMemo(() => {
+    // Si pas de match ou pas de score, retourner les données originales
+    if (
+      !group?.match ||
+      group.match.homeScore === null ||
+      group.match.awayScore === null
+    ) {
+      return {
+        liveMembers: members,
+        livePredictions: predictions,
+        hasLiveScores: false,
+      };
+    }
+
+    const currentHomeScore = group.match.homeScore;
+    const currentAwayScore = group.match.awayScore;
+    const isMatchFinished = group.match.status === "finished";
+
+    // Si le match est terminé et que les prédictions ont déjà des points, ne pas recalculer
+    if (isMatchFinished && predictions.some((p) => p.points !== null)) {
+      return {
+        liveMembers: members,
+        livePredictions: predictions,
+        hasLiveScores: false,
+      };
+    }
+
+    // Calculer les points pour chaque prédiction
+    const updatedPredictions = predictions.map((pred) => {
+      if (pred.externalMatchId !== group.match?.id) {
+        return pred;
+      }
+
+      const livePoints = calculateLivePoints(
+        pred.homeScore,
+        pred.awayScore,
+        currentHomeScore,
+        currentAwayScore
+      );
+
+      return {
+        ...pred,
+        points: livePoints,
+      };
+    });
+
+    // Calculer le total des points pour chaque membre
+    const pointsByUser = new Map<string, number>();
+    updatedPredictions.forEach((pred) => {
+      if (pred.externalMatchId === group.match?.id && pred.points !== null) {
+        const currentPoints = pointsByUser.get(pred.userId) || 0;
+        pointsByUser.set(pred.userId, currentPoints + pred.points);
+      }
+    });
+
+    // Mettre à jour les scores des membres
+    const updatedMembers = members.map((member) => {
+      const additionalPoints = pointsByUser.get(member.id) || 0;
+
+      // Calculer le score de base (en soustrayant les anciens points de cette prédiction)
+      const oldPrediction = predictions.find(
+        (p) => p.userId === member.id && p.externalMatchId === group.match?.id
+      );
+      const oldPoints = oldPrediction?.points || 0;
+      const baseScore = member.score - oldPoints;
+
+      return {
+        ...member,
+        score: baseScore + additionalPoints,
+      };
+    });
+
+    return {
+      liveMembers: updatedMembers,
+      livePredictions: updatedPredictions,
+      hasLiveScores:
+        !isMatchFinished || predictions.every((p) => p.points === null),
+    };
+  }, [group?.match, members, predictions]);
 
   if (loading) {
     return (
@@ -479,14 +561,42 @@ export default function GroupPage() {
               <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-linear-to-tr from-purple-600/20 to-pink-600/20 rounded-full blur-3xl" />
 
               <div className="relative">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-                  <Trophy className="w-6 h-6 text-yellow-500" />
-                  Classement {group.match && "& Pronostics"}
-                </h2>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <Trophy className="w-6 h-6 text-yellow-500" />
+                    Classement {group.match && "& Pronostics"}
+                  </h2>
+                  {hasLiveScores && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{
+                        opacity: 1,
+                        scale: 1,
+                      }}
+                      className="flex items-center gap-2 px-3 py-1 bg-blue-500/10 dark:bg-blue-500/20 rounded-full border border-blue-500/30"
+                    >
+                      <motion.div
+                        animate={{
+                          scale: [1, 1.2, 1],
+                          opacity: [1, 0.5, 1],
+                        }}
+                        transition={{
+                          duration: 2,
+                          repeat: Infinity,
+                          ease: "easeInOut",
+                        }}
+                        className="w-2 h-2 bg-blue-500 rounded-full"
+                      />
+                      <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
+                        En direct
+                      </span>
+                    </motion.div>
+                  )}
+                </div>
 
                 <PredictionsRanking
-                  members={members}
-                  predictions={predictions}
+                  members={liveMembers}
+                  predictions={livePredictions}
                   matchId={group.match?.id}
                   groupId={group.id}
                   ownerId={group.ownerId}

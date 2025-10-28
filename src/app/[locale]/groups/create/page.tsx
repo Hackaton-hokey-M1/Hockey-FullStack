@@ -59,11 +59,15 @@ export default function CreateGroupPage() {
       setTimeout(() => {
         router.push("/");
       }, 2000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Erreur lors de la création du groupe:", err);
+      const errorMessage =
+        err instanceof Error && "response" in err
+          ? (err as { response?: { data?: { error?: string } } }).response?.data
+              ?.error
+          : undefined;
       setError(
-        err.response?.data?.error ||
-          "Une erreur est survenue lors de la création du groupe"
+        errorMessage || "Une erreur est survenue lors de la création du groupe"
       );
     } finally {
       setIsLoading(false);

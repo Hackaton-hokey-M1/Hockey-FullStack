@@ -55,16 +55,18 @@ export async function POST(request: NextRequest) {
       },
       { status: 200 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error joining group by code:", error);
 
     // Gestion des erreurs spécifiques
-    if (error.message === "Code d'invitation invalide") {
-      return NextResponse.json({ error: error.message }, { status: 404 });
+    const errorMessage = error instanceof Error ? error.message : "";
+
+    if (errorMessage === "Code d'invitation invalide") {
+      return NextResponse.json({ error: errorMessage }, { status: 404 });
     }
 
-    if (error.message === "Vous êtes déjà membre de ce groupe") {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+    if (errorMessage === "Vous êtes déjà membre de ce groupe") {
+      return NextResponse.json({ error: errorMessage }, { status: 400 });
     }
 
     return NextResponse.json(

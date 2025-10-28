@@ -48,20 +48,22 @@ export async function POST(
       },
       { status: 200 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error joining group:", error);
 
     // Gestion des erreurs spécifiques
-    if (error.message === "Groupe introuvable") {
-      return NextResponse.json({ error: error.message }, { status: 404 });
+    const errorMessage = error instanceof Error ? error.message : "";
+
+    if (errorMessage === "Groupe introuvable") {
+      return NextResponse.json({ error: errorMessage }, { status: 404 });
     }
 
     if (
-      error.message === "Vous êtes déjà membre de ce groupe" ||
-      error.message ===
+      errorMessage === "Vous êtes déjà membre de ce groupe" ||
+      errorMessage ===
         "Ce groupe est privé. Vous avez besoin d'un code d'invitation."
     ) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      return NextResponse.json({ error: errorMessage }, { status: 400 });
     }
 
     return NextResponse.json(

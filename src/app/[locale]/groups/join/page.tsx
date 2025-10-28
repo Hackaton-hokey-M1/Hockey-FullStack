@@ -49,7 +49,7 @@ export default function JoinGroupPage() {
       setIsLoadingGroups(true);
       const data = await getPublicGroups();
       setPublicGroups(data.groups);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Erreur lors du chargement des groupes:", err);
       setError("Impossible de charger les groupes publics");
     } finally {
@@ -74,9 +74,14 @@ export default function JoinGroupPage() {
       setTimeout(() => {
         router.push("/");
       }, 2000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Erreur lors de la tentative de rejoindre le groupe:", err);
-      setError(err.response?.data?.error || "Une erreur est survenue");
+      const errorMessage =
+        err instanceof Error && "response" in err
+          ? (err as { response?: { data?: { error?: string } } }).response?.data
+              ?.error
+          : undefined;
+      setError(errorMessage || "Une erreur est survenue");
     } finally {
       setIsJoining(false);
     }
@@ -98,9 +103,14 @@ export default function JoinGroupPage() {
       setTimeout(() => {
         router.push("/");
       }, 2000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Erreur lors de la tentative de rejoindre le groupe:", err);
-      setError(err.response?.data?.error || "Une erreur est survenue");
+      const errorMessage =
+        err instanceof Error && "response" in err
+          ? (err as { response?: { data?: { error?: string } } }).response?.data
+              ?.error
+          : undefined;
+      setError(errorMessage || "Une erreur est survenue");
     } finally {
       setJoiningGroupId(null);
     }
@@ -232,7 +242,7 @@ export default function JoinGroupPage() {
                 >
                   <div className="space-y-2">
                     <Label htmlFor="inviteCode" className="font-semibold">
-                      Code d'invitation
+                      Code d&apos;invitation
                     </Label>
                     <div className="relative">
                       <LinkIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />

@@ -103,6 +103,10 @@ export default function JoinGroupPage() {
           ? (err as { response?: { data?: { error?: string } } }).response?.data
               ?.error
           : undefined;
+      if (errorMessage === "Vous êtes déjà membre de ce groupe") {
+        router.push("/groups/" + groupId);
+        return;
+      }
       setError(errorMessage || "Une erreur est survenue");
     } finally {
       setJoiningGroupId(null);

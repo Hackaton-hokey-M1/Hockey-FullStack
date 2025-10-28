@@ -25,6 +25,9 @@ export interface Group {
   isOwner?: boolean;
   isMember?: boolean;
   createdAt?: string;
+  pointsExactScore?: number;
+  pointsCorrectResult?: number;
+  pointsBonus?: number;
 }
 
 export interface UserGroup extends Group {
@@ -71,9 +74,18 @@ export const getMyGroups = async (): Promise<{ groups: UserGroup[] }> => {
   return response.data;
 };
 
+export interface GroupMember {
+  id: string;
+  name: string | null;
+  role: "ADMIN" | "MEMBER";
+  score: number;
+  isBanned: boolean;
+  joinedAt: Date | string;
+}
+
 export const getUsersInGroup = async (
   groupId: number
-): Promise<{ group: Group }> => {
+): Promise<{ users: GroupMember[] }> => {
   const response = await privateApi.get(`/groups/${groupId}/users`);
   return response.data;
 };

@@ -1,9 +1,8 @@
-import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
-import { verifyToken } from "@/lib/jwt";
 import { groupsService } from "@/services/groupsService";
 
+// GET /groups/[id]/users - Récupérer les utilisateurs d'un groupe
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -19,30 +18,16 @@ export async function GET(
       );
     }
 
-    // Récupérer l'utilisateur si authentifié
-    const requestCookies = await cookies();
-    const accessToken = requestCookies.get("accessToken")?.value;
-    let userId: string | undefined;
+    const users = await groupsService.allUserInGroup(groupId);
 
-    if (accessToken) {
-      const payload = await verifyToken(accessToken);
-      userId = payload?.userId;
-    }
+    console.log("Users from DB:", users);
+    console.log("Admin count:", users.filter((u) => u.role === "ADMIN").length);
 
-    const group = await groupsService.allUserInGroup(groupId);
-
-    if (!group) {
-      return NextResponse.json(
-        { error: "Groupe introuvable" },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json({ group }, { status: 200 });
+    return NextResponse.json({ users }, { status: 200 });
   } catch (error) {
-    console.error("Error fetching group:", error);
+    console.error("Error fetching group users:", error);
     return NextResponse.json(
-      { error: "Erreur lors de la récupération du groupe" },
+      { error: "Erreur lors de la récupération des utilisateurs du groupe" },
       { status: 500 }
     );
   }

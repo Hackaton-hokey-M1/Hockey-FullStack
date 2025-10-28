@@ -26,6 +26,9 @@ export type GroupWithDetails = {
   membersCount: number;
   isOwner: boolean;
   isMember: boolean;
+  pointsExactScore: number;
+  pointsCorrectResult: number;
+  pointsBonus: number;
 };
 
 // Générer un code d'invitation unique
@@ -111,9 +114,9 @@ export const groupsService = {
         },
         members: userId
           ? {
-            where: { userId },
-            select: { userId: true },
-          }
+              where: { userId },
+              select: { userId: true },
+            }
           : false,
       },
     });
@@ -136,6 +139,9 @@ export const groupsService = {
         userId && Array.isArray(group.members)
           ? group.members.length > 0
           : false,
+      pointsExactScore: group.pointsExactScore,
+      pointsCorrectResult: group.pointsCorrectResult,
+      pointsBonus: group.pointsBonus,
     };
   },
 
@@ -253,22 +259,29 @@ export const groupsService = {
     }));
   },
 
-  async allUserInGroup(
-    groupId: number
-  ) {
+  async allUserInGroup(groupId: number) {
     const members = await prisma.groupMember.findMany({
       where: { groupId },
-      select: {
-        userId: true,
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      orderBy: {
+        score: "desc", // Trier par score décroissant
       },
     });
 
-    return prisma.user.findMany({
-      where: { id: { in: members.map((m) => m.userId) } },
-      select: {
-        id: true,
-        name: true,
-      },
-    });
-  }
+    return members.map((member) => ({
+      id: member.user.id,
+      name: member.user.name,
+      role: member.role,
+      score: member.score,
+      isBanned: member.isBanned,
+      joinedAt: member.joinedAt,
+    }));
+  },
 };

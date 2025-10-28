@@ -1,7 +1,5 @@
 import bcrypt from "bcryptjs";
 
-export const runtime = 'nodejs';
-
 import { NextResponse } from 'next/server';
 
 import { createAccessToken, createRefreshToken } from "@/lib/jwt";

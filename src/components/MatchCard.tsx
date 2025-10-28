@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { Calendar, MapPin, Trophy } from "lucide-react";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 
@@ -87,7 +88,7 @@ export default function MatchCard({ match }: MatchCardProps) {
                                             whileHover={{ scale: 1.1, rotate: 5 }}
                                             className="w-16 h-16 rounded-full bg-linear-to-br from-blue-100 to-cyan-100 dark:from-blue-900/30 dark:to-cyan-900/30 flex items-center justify-center overflow-hidden shadow-lg"
                                         >
-                                            <img
+                                            <Image
                                                 src={match.homeTeam.logo}
                                                 alt={match.homeTeam.name}
                                                 className="w-12 h-12 object-contain"
@@ -150,7 +151,7 @@ export default function MatchCard({ match }: MatchCardProps) {
                                             whileHover={{ scale: 1.1, rotate: -5 }}
                                             className="w-16 h-16 rounded-full bg-linear-to-br from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 flex items-center justify-center overflow-hidden shadow-lg"
                                         >
-                                            <img
+                                            <Image
                                                 src={match.awayTeam.logo}
                                                 alt={match.awayTeam.name}
                                                 className="w-12 h-12 object-contain"

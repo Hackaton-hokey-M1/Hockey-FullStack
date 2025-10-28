@@ -10,6 +10,17 @@
     "signUp": "Sign up",
     "forgotPassword": "Forgot Password?"
   },
+  "Register": {
+    "title": "Create an account",
+    "pseudo": "Username",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Register",
+    "invalidEmail": "Invalid email",
+    "minPassword": "Minimum 6 characters",
+    "description": "Fill in the details below to create a new account\n",
+    "login": "Login"
+  },
   "Navbar": {
     "home": "Home",
     "matches": "Matches",

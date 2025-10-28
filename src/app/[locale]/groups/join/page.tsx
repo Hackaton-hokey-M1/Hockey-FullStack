@@ -95,14 +95,7 @@ export default function JoinGroupPage() {
     try {
       const response = await joinPublicGroup(groupId);
       setSuccess(response.message);
-
-      // Recharger la liste des groupes pour mettre à jour l'UI
-      await loadPublicGroups();
-
-      // Rediriger vers la page d'accueil après 2 secondes
-      setTimeout(() => {
-        router.push("/");
-      }, 2000);
+      router.push("/groups/" + groupId);
     } catch (err: unknown) {
       console.error("Erreur lors de la tentative de rejoindre le groupe:", err);
       const errorMessage =

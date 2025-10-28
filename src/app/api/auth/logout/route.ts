@@ -1,17 +1,15 @@
 import { NextResponse } from "next/server";
 
-import { supabase } from "@/lib/supabase";
-
 export async function POST(request: Request) {
 
   const cookie = request.headers.get("cookie");
   const refreshToken = cookie?.split("refreshToken=")[1]?.split(";")[0];
-  if (refreshToken) {
-    await supabase.auth.signOut();
+  if (!refreshToken) {
+    return NextResponse.json({ error: "Pas de refresh token" }, { status: 400 });
   }
 
   const res = NextResponse.json({ message: "Déconnexion réussie" });
-  
+
   res.cookies.set("accessToken", "", {
     maxAge: 0,
     path: "/",

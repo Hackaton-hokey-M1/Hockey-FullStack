@@ -60,12 +60,11 @@ export async function POST(request: Request) {
       },
       { status: 201 }
     );
-  } catch (error: any) {
-    console.error("Registration error:", error);
+  } catch (error: unknown) {
     return NextResponse.json(
       {
         error: "An unexpected error occurred",
-        details: error.message
+        details: error
       },
       { status: 500 }
     );

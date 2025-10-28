@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { AlertCircle, Loader2 } from "lucide-react";
 
+import { useMatchesLive } from "@/contexts/MatchesLiveContext";
 import { matchService } from "@/services/matchService";
 import { Match } from "@/types/match";
 
@@ -15,6 +16,10 @@ export default function MatchList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Utiliser le contexte SSE pour les mises à jour en temps réel
+  const { applyUpdateToMatch, liveUpdates } = useMatchesLive();
+
+  // Charger les matchs initialement
   useEffect(() => {
     const fetchMatches = async () => {
       try {
@@ -34,6 +39,15 @@ export default function MatchList() {
 
     fetchMatches();
   }, []);
+
+  // Appliquer les mises à jour SSE aux matchs
+  useEffect(() => {
+    if (matches.length === 0 || liveUpdates.size === 0) return;
+
+    setMatches((prevMatches) =>
+      prevMatches.map((match) => applyUpdateToMatch(match))
+    );
+  }, [liveUpdates, applyUpdateToMatch]);
 
   if (loading) {
     return (

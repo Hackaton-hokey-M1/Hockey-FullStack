@@ -44,7 +44,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       user,
       login,
       register,
-      logout
+      logout,
+      setUser
     }),
     [user, login, register, logout]
   );

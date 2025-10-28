@@ -6,12 +6,15 @@ generator client {
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
 }
 
 model User {
-  id   String  @id @default(cuid()) @db.Uuid
-  name String?
+  id       String   @id @default(uuid()) @db.Uuid
+  email    String   @unique
+  name     String?
+  password String   // Mot de passe hashé
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
   ownedGroups         Group[]       @relation("GroupOwner")

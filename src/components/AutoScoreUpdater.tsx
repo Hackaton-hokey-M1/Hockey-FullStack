@@ -3,7 +3,6 @@
 import { useEffect } from "react";
 
 import { matchService } from "@/services/matchService";
-import type { Match } from "@/types/match";
 
 interface AutoScoreUpdaterProps {
   groupId: number;
@@ -23,20 +22,15 @@ export function AutoScoreUpdater({
   useEffect(() => {
     if (!matchId) return;
 
-    let intervalId: NodeJS.Timeout;
+    let intervalId: NodeJS.Timeout | null = null;
 
-    const checkAndUpdateScores = async () => {
+    async function checkAndUpdateScores() {
       try {
-        // Récupérer les données actuelles du match
         const matches = await matchService.getAllMatches();
         const match = matches.find((m) => m.id === matchId);
-
         if (!match) return;
-
-        // Si le match est terminé, mettre à jour les scores
         if (match.status === "finished") {
           console.log("Match terminé détecté, mise à jour des scores...");
-
           const response = await fetch("/api/predictions/update-scores", {
             method: "POST",
             headers: {
@@ -70,7 +64,7 @@ export function AutoScoreUpdater({
       } catch (error) {
         console.error("Erreur lors de la vérification du match:", error);
       }
-    };
+    }
 
     // Vérifier immédiatement
     checkAndUpdateScores();
@@ -88,4 +82,3 @@ export function AutoScoreUpdater({
   // Ce composant n'affiche rien, il fonctionne en arrière-plan
   return null;
 }
-

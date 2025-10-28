@@ -11,13 +11,16 @@
  * @param pointsExactScore - Non utilisé dans ce système (gardé pour compatibilité)
  * @param pointsCorrectResult - Non utilisé dans ce système (gardé pour compatibilité)
  */
+
 export function calculatePoints(
   predictedHome: number,
   predictedAway: number,
   actualHome: number,
   actualAway: number,
-  pointsExactScore: number,
-  pointsCorrectResult: number
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _pointsExactScore: number,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _pointsCorrectResult: number
 ): number {
   // 1. Score exact = 5 points
   if (predictedHome === actualHome && predictedAway === actualAway) {

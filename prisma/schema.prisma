@@ -8,3 +8,147 @@ datasource db {
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
+
+model User {
+  id   String  @id @default(cuid()) @db.Uuid
+  name String?
+
+  // Relations
+  ownedGroups         Group[]       @relation("GroupOwner")
+  memberships         GroupMember[]
+  predictions         Prediction[]
+  sentInvitations     Invitation[]  @relation("InvitationSender")
+  receivedInvitations Invitation[]  @relation("InvitationReceiver")
+}
+
+model Group {
+  id            Int             @id @default(autoincrement())
+  name          String
+  description   String?
+  visibility    GroupVisibility @default(PUBLIC)
+  competitionId String // ID de la compétition depuis l'API externe
+  ownerId       String          @db.Uuid
+  inviteCode    String?         @unique // Pour les invitations en groupe privé
+
+  // Règles de scoring personnalisables
+  pointsExactScore    Int @default(3) // Points pour score exact
+  pointsCorrectResult Int @default(1) // Points pour bon résultat (victoire/défaite/nul)
+  pointsBonus         Int @default(0) // Bonus éventuel
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  owner       User          @relation("GroupOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members     GroupMember[]
+  predictions Prediction[]
+  invitations Invitation[]
+
+  @@index([competitionId])
+  @@index([inviteCode])
+}
+
+model GroupMember {
+  id       Int        @id @default(autoincrement())
+  userId   String     @db.Uuid
+  groupId  Int
+  role     MemberRole @default(MEMBER)
+  score    Int        @default(0) // Score total du membre dans ce groupe
+  isBanned Boolean    @default(false)
+  joinedAt DateTime   @default(now())
+
+  // Relations
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, groupId])
+  @@index([groupId, score]) // Pour le classement
+}
+
+model Match {
+  id            Int         @id @default(autoincrement())
+  externalId    String      @unique // ID du match depuis l'API externe
+  competitionId String // ID de la compétition
+  homeTeam      String
+  awayTeam      String
+  homeScore     Int?
+  awayScore     Int?
+  status        MatchStatus @default(SCHEDULED)
+  startTime     DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  predictions Prediction[]
+
+  @@index([competitionId])
+  @@index([status])
+  @@index([startTime])
+}
+
+model Prediction {
+  id        Int    @id @default(autoincrement())
+  userId    String @db.Uuid
+  groupId   Int
+  matchId   Int
+  homeScore Int // Pronostic équipe domicile
+  awayScore Int // Pronostic équipe extérieur
+  points    Int? // Points gagnés (null si match pas terminé)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, groupId, matchId]) // Un seul pronostic par utilisateur/groupe/match
+  @@index([groupId, matchId])
+}
+
+model Invitation {
+  id         Int              @id @default(autoincrement())
+  groupId    Int
+  senderId   String?          @db.Uuid // Peut être null si invitation par code
+  receiverId String?          @db.Uuid // Null si invitation ouverte
+  email      String? // Pour inviter par email
+  status     InvitationStatus @default(PENDING)
+
+  createdAt DateTime  @default(now())
+  expiresAt DateTime?
+
+  // Relations
+  group    Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  sender   User? @relation("InvitationSender", fields: [senderId], references: [id], onDelete: SetNull)
+  receiver User? @relation("InvitationReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@index([groupId])
+  @@index([receiverId, status])
+}
+
+enum GroupVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+enum MemberRole {
+  ADMIN
+  MEMBER
+}
+
+enum MatchStatus {
+  SCHEDULED // Match programmé
+  LIVE // Match en cours
+  FINISHED // Match terminé
+  POSTPONED // Match reporté
+  CANCELLED // Match annulé
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  EXPIRED
+}

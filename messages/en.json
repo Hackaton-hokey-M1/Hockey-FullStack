@@ -24,6 +24,7 @@
   "Navbar": {
     "home": "Home",
     "matches": "Matches",
+    "myGroups": "My groups",
     "login": "Login",
     "register": "Sign up"
   },
@@ -55,5 +56,62 @@
     "noGroups": "No public groups available at the moment",
     "joinButton": "Join",
     "back": "Back"
+  },
+  "MyGroups": {
+    "title": "My groups",
+    "subtitle": "Manage your betting groups",
+    "noGroups": "You are not part of any group yet",
+    "createFirst": "Create your first group",
+    "joinFirst": "Join a group",
+    "members": "members",
+    "member": "member",
+    "owner": "Owner",
+    "admin": "Admin",
+    "score": "Score",
+    "viewGroup": "View group",
+    "inviteCode": "Invite code"
+  },
+  "Footer": {
+    "description": "Bet on your favorite hockey games with your friends",
+    "quickLinks": "Quick links",
+    "home": "Home",
+    "matches": "Matches",
+    "myGroups": "My groups",
+    "createGroup": "Create a group",
+    "joinGroup": "Join a group",
+    "legal": "Legal",
+    "privacy": "Privacy",
+    "terms": "Terms of Service",
+    "rights": "All rights reserved"
+  },
+  "Privacy": {
+    "title": "Privacy Policy",
+    "lastUpdate": "Last updated",
+    "intro": "At HockeyBet, we take the protection of your personal data very seriously. This privacy policy explains how we collect, use, and protect your information.",
+    "section1Title": "Data Collection",
+    "section1Content": "We collect the information you provide during registration: username, email address, and password. This data is necessary to create and manage your account.",
+    "section2Title": "Data Usage",
+    "section2Content": "Your data is used solely to provide our services: account management, participation in betting groups, and improving your user experience.",
+    "section3Title": "Data Protection",
+    "section3Content": "We implement appropriate security measures to protect your personal information from unauthorized access, modification, disclosure, or destruction.",
+    "section4Title": "Your Rights",
+    "section4Content": "You have the right to access, modify, or delete your personal data at any time. To exercise these rights, contact us.",
+    "section5Title": "Cookies",
+    "section5Content": "We use cookies to improve your experience on our site. You can configure your browser to refuse cookies if you wish."
+  },
+  "Terms": {
+    "title": "Terms of Service",
+    "lastUpdate": "Last updated",
+    "intro": "By using HockeyBet, you agree to these terms of service. Please read them carefully.",
+    "section1Title": "Use of Service",
+    "section1Content": "HockeyBet is a sports prediction platform for friends. You must be at least 18 years old to use this service. You are responsible for maintaining the confidentiality of your account.",
+    "section2Title": "Code of Conduct",
+    "section2Content": "You agree to use the service responsibly and respectfully. Any abusive, fraudulent, or inappropriate behavior may result in account suspension.",
+    "section3Title": "Intellectual Property",
+    "section3Content": "All content on HockeyBet (logo, design, text) is protected by intellectual property rights and belongs to HockeyBet.",
+    "section4Title": "Limitation of Liability",
+    "section4Content": "HockeyBet is provided 'as is'. We do not guarantee that the service will always be available or error-free. We are not responsible for losses resulting from use of the service.",
+    "section5Title": "Modifications",
+    "section5Content": "We reserve the right to modify these terms at any time. Modifications will be effective upon publication on the site."
   }
 }

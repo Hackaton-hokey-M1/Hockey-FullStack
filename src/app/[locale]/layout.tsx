@@ -11,6 +11,7 @@ import { notFound } from "next/navigation";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { MatchesLiveProvider } from "@/contexts/MatchesLiveContext";
 import { routing } from "@/i18n/routing";
 
 import "@/app/global.css";
@@ -51,14 +52,16 @@ export default async function LocaleLayout({ children, params }: Props) {
       >
         <div className="min-h-full flex flex-col bg-linear-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950">
           <AuthProvider>
-            <ThemeProvider attribute="class">
-              <NextIntlClientProvider>
-                <Toaster position="top-right" richColors />
-                <Navbar />
-                <main className="flex-1 pt-40">{children}</main>
-                <Footer />
-              </NextIntlClientProvider>
-            </ThemeProvider>
+            <MatchesLiveProvider>
+              <ThemeProvider attribute="class">
+                <NextIntlClientProvider>
+                  <Toaster position="top-right" richColors />
+                  <Navbar />
+                  <main className="flex-1 pt-40">{children}</main>
+                  <Footer />
+                </NextIntlClientProvider>
+              </ThemeProvider>
+            </MatchesLiveProvider>
           </AuthProvider>
         </div>
       </body>

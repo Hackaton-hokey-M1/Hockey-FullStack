@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { motion } from "framer-motion";
 import {
@@ -13,10 +13,10 @@ import {
 
 import { useParams, useRouter } from "next/navigation";
 
-import { AutoScoreUpdater } from "@/components/AutoScoreUpdater";
 import { PredictionsRanking } from "@/components/PredictionsRanking";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { useMatchesLive } from "@/contexts/MatchesLiveContext";
 import {
   getGroupById,
   getUsersInGroup,
@@ -25,6 +25,7 @@ import {
 } from "@/lib/apiGroups";
 import { matchService } from "@/services/matchService";
 import type { Match } from "@/types/match";
+import { calculateLivePoints } from "@/utils/calculateLivePoints";
 
 interface Prediction {
   id: number;
@@ -55,6 +56,10 @@ export default function GroupPage() {
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [loading, setLoading] = useState(true);
   const [copiedCode, setCopiedCode] = useState(false);
+  const previousMatchStatusRef = useRef<string | null>(null);
+
+  // Utiliser le contexte SSE pour les mises à jour en temps réel
+  const { applyUpdateToMatch, liveUpdates } = useMatchesLive();
 
   useEffect(() => {
     const fetchGroupData = async () => {
@@ -127,13 +132,12 @@ export default function GroupPage() {
   }, [params?.id]);
 
   // Callback pour rafraîchir les données après mise à jour des scores
-  const handleScoresUpdated = async () => {
+  const handleScoresUpdated = useCallback(async () => {
     const idParam = params?.id;
     if (!idParam) return;
     const id = Array.isArray(idParam) ? Number(idParam[0]) : Number(idParam);
     if (Number.isNaN(id)) return;
 
-    // Recharger les membres et les prédictions
     try {
       const [membersResponse, predictionsResponse] = await Promise.all([
         getUsersInGroup(id),
@@ -147,7 +151,76 @@ export default function GroupPage() {
     } catch (error) {
       console.error("Erreur lors du rechargement des données:", error);
     }
-  };
+  }, [params?.id]);
+
+  // Appliquer les mises à jour SSE au match du groupe
+  useEffect(() => {
+    if (!group?.match) return;
+
+    const updatedMatch = applyUpdateToMatch(group.match);
+    if (updatedMatch !== group.match) {
+      console.log(
+        `[GroupPage] Mise à jour du match via SSE: ${updatedMatch.homeScore}-${updatedMatch.awayScore} [${updatedMatch.status}]`
+      );
+      setGroup((prev) => (prev ? { ...prev, match: updatedMatch } : null));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveUpdates, group?.match?.id, applyUpdateToMatch]);
+
+  // Détecter quand un match passe à "finished" et mettre à jour automatiquement les scores
+  useEffect(() => {
+    if (!group?.match) return;
+
+    const currentStatus = group.match.status;
+
+    // Si le match vient de se terminer (passage de "live" à "finished")
+    if (
+      previousMatchStatusRef.current &&
+      previousMatchStatusRef.current !== "finished" &&
+      currentStatus === "finished"
+    ) {
+      console.log(
+        "[GroupPage] Match terminé détecté, mise à jour automatique des scores de prédictions..."
+      );
+
+      // Mettre à jour les scores de prédictions
+      const updateScores = async () => {
+        try {
+          const response = await fetch("/api/predictions/update-scores", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              matchId: group.match!.id,
+              groupId: group.id,
+              homeScore: group.match!.homeScore,
+              awayScore: group.match!.awayScore,
+            }),
+          });
+
+          if (response.ok) {
+            console.log(
+              "[GroupPage] Scores de prédictions mis à jour avec succès"
+            );
+            await handleScoresUpdated();
+          } else {
+            console.error(
+              "[GroupPage] Erreur lors de la mise à jour des scores"
+            );
+          }
+        } catch (error) {
+          console.error("[GroupPage] Erreur:", error);
+        }
+      };
+
+      updateScores();
+    }
+
+    // Mettre à jour le statut précédent
+    previousMatchStatusRef.current = currentStatus;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [group?.match?.status, group?.match?.id, group?.id, handleScoresUpdated]);
 
   // Callback pour rafraîchir après action de gestion de membre
   const handleMembersUpdated = async () => {
@@ -161,6 +234,87 @@ export default function GroupPage() {
       setTimeout(() => setCopiedCode(false), 2000);
     }
   };
+
+  // Calculer les points en temps réel si le match a un score
+  const { liveMembers, livePredictions, hasLiveScores } = useMemo(() => {
+    // Si pas de match ou pas de score, retourner les données originales
+    if (
+      !group?.match ||
+      group.match.homeScore === null ||
+      group.match.awayScore === null
+    ) {
+      return {
+        liveMembers: members,
+        livePredictions: predictions,
+        hasLiveScores: false,
+      };
+    }
+
+    const currentHomeScore = group.match.homeScore;
+    const currentAwayScore = group.match.awayScore;
+    const isMatchFinished = group.match.status === "finished";
+
+    // Si le match est terminé et que les prédictions ont déjà des points, ne pas recalculer
+    if (isMatchFinished && predictions.some((p) => p.points !== null)) {
+      return {
+        liveMembers: members,
+        livePredictions: predictions,
+        hasLiveScores: false,
+      };
+    }
+
+    // Calculer les points pour chaque prédiction
+    const updatedPredictions = predictions.map((pred) => {
+      if (pred.externalMatchId !== group.match?.id) {
+        return pred;
+      }
+
+      const livePoints = calculateLivePoints(
+        pred.homeScore,
+        pred.awayScore,
+        currentHomeScore,
+        currentAwayScore
+      );
+
+      return {
+        ...pred,
+        points: livePoints,
+      };
+    });
+
+    // Calculer le total des points pour chaque membre
+    const pointsByUser = new Map<string, number>();
+    updatedPredictions.forEach((pred) => {
+      if (pred.externalMatchId === group.match?.id && pred.points !== null) {
+        const currentPoints = pointsByUser.get(pred.userId) || 0;
+        pointsByUser.set(pred.userId, currentPoints + pred.points);
+      }
+    });
+
+    // Mettre à jour les scores des membres
+    const updatedMembers = members.map((member) => {
+      const additionalPoints = pointsByUser.get(member.id) || 0;
+
+      // Calculer le score de base (en soustrayant les anciens points de cette prédiction)
+      const oldPrediction = predictions.find(
+        (p) => p.userId === member.id && p.externalMatchId === group.match?.id
+      );
+      const oldPoints = oldPrediction?.points || 0;
+      const baseScore = member.score - oldPoints;
+
+      return {
+        ...member,
+        score: baseScore + additionalPoints,
+      };
+    });
+
+    return {
+      liveMembers: updatedMembers,
+      livePredictions: updatedPredictions,
+      hasLiveScores:
+        !isMatchFinished || predictions.every((p) => p.points === null),
+    };
+  }, [group?.match, members, predictions]);
 
   if (loading) {
     return (
@@ -191,15 +345,6 @@ export default function GroupPage() {
 
   return (
     <div className="min-h-screen">
-      {/* Mise à jour automatique des scores */}
-      {group?.match && (
-        <AutoScoreUpdater
-          groupId={group.id}
-          matchId={group.match.id}
-          onScoresUpdated={handleScoresUpdated}
-        />
-      )}
-
       <main className="container mx-auto px-4 pb-8 max-w-7xl">
         {/* Back Button */}
         <motion.button
@@ -303,7 +448,14 @@ export default function GroupPage() {
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                       Match à parier
                     </h2>
-                    <span
+                    <motion.span
+                      key={`status-${group.match.id}-${group.match.status}`}
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{
+                        scale: [0.8, 1.1, 1],
+                        opacity: 1,
+                      }}
+                      transition={{ duration: 0.4 }}
                       className={`px-3 py-1 rounded-full text-xs font-semibold ${
                         group.match.status === "live"
                           ? "bg-red-500 text-white animate-pulse"
@@ -317,7 +469,7 @@ export default function GroupPage() {
                         : group.match.status === "finished"
                         ? "Terminé"
                         : "À venir"}
-                    </span>
+                    </motion.span>
                   </div>
 
                   <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-6">
@@ -338,9 +490,22 @@ export default function GroupPage() {
                       <div className="text-xl font-bold text-gray-900 dark:text-white mb-2">
                         {group.match.homeTeam.name}
                       </div>
-                      <div className="text-5xl font-bold text-blue-600 dark:text-blue-400">
+                      <motion.div
+                        key={`home-score-${group.match.id}-${group.match.homeScore}`}
+                        initial={{ scale: 1 }}
+                        animate={{
+                          scale: [1, 1.15, 1],
+                          textShadow: [
+                            "0 0 0px rgba(37, 99, 235, 0)",
+                            "0 0 20px rgba(37, 99, 235, 0.5)",
+                            "0 0 0px rgba(37, 99, 235, 0)",
+                          ],
+                        }}
+                        transition={{ duration: 0.6 }}
+                        className="text-5xl font-bold text-blue-600 dark:text-blue-400"
+                      >
                         {group.match.homeScore}
-                      </div>
+                      </motion.div>
                     </div>
                     <div className="px-6 text-2xl font-bold text-gray-400 dark:text-gray-500">
                       VS
@@ -349,9 +514,22 @@ export default function GroupPage() {
                       <div className="text-xl font-bold text-gray-900 dark:text-white mb-2">
                         {group.match.awayTeam.name}
                       </div>
-                      <div className="text-5xl font-bold text-cyan-600 dark:text-cyan-400">
+                      <motion.div
+                        key={`away-score-${group.match.id}-${group.match.awayScore}`}
+                        initial={{ scale: 1 }}
+                        animate={{
+                          scale: [1, 1.15, 1],
+                          textShadow: [
+                            "0 0 0px rgba(6, 182, 212, 0)",
+                            "0 0 20px rgba(6, 182, 212, 0.5)",
+                            "0 0 0px rgba(6, 182, 212, 0)",
+                          ],
+                        }}
+                        transition={{ duration: 0.6 }}
+                        className="text-5xl font-bold text-cyan-600 dark:text-cyan-400"
+                      >
                         {group.match.awayScore}
-                      </div>
+                      </motion.div>
                     </div>
                   </div>
 
@@ -383,14 +561,42 @@ export default function GroupPage() {
               <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-linear-to-tr from-purple-600/20 to-pink-600/20 rounded-full blur-3xl" />
 
               <div className="relative">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-                  <Trophy className="w-6 h-6 text-yellow-500" />
-                  Classement {group.match && "& Pronostics"}
-                </h2>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <Trophy className="w-6 h-6 text-yellow-500" />
+                    Classement {group.match && "& Pronostics"}
+                  </h2>
+                  {hasLiveScores && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{
+                        opacity: 1,
+                        scale: 1,
+                      }}
+                      className="flex items-center gap-2 px-3 py-1 bg-blue-500/10 dark:bg-blue-500/20 rounded-full border border-blue-500/30"
+                    >
+                      <motion.div
+                        animate={{
+                          scale: [1, 1.2, 1],
+                          opacity: [1, 0.5, 1],
+                        }}
+                        transition={{
+                          duration: 2,
+                          repeat: Infinity,
+                          ease: "easeInOut",
+                        }}
+                        className="w-2 h-2 bg-blue-500 rounded-full"
+                      />
+                      <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
+                        En direct
+                      </span>
+                    </motion.div>
+                  )}
+                </div>
 
                 <PredictionsRanking
-                  members={members}
-                  predictions={predictions}
+                  members={liveMembers}
+                  predictions={livePredictions}
                   matchId={group.match?.id}
                   groupId={group.id}
                   ownerId={group.ownerId}

@@ -1,20 +1,25 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from "react";
 
-import { motion } from 'framer-motion';
-import { ArrowLeft, Calendar, Trophy, Loader2, AlertCircle } from 'lucide-react';
-import toast, { Toaster } from 'react-hot-toast';
+import { motion } from "framer-motion";
+import {
+  AlertCircle,
+  ArrowLeft,
+  Calendar,
+  Loader2,
+  Trophy,
+} from "lucide-react";
+import toast, { Toaster } from "react-hot-toast";
 
-import Image from 'next/image';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import Image from "next/image";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { matchService } from '@/services/matchService';
-import type { Match } from '@/types/match';
-
-
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useMatchesLive } from "@/contexts/MatchesLiveContext";
+import { matchService } from "@/services/matchService";
+import type { Match } from "@/types/match";
 
 export default function PredictionPage() {
   const params = useParams();
@@ -22,15 +27,19 @@ export default function PredictionPage() {
   const searchParams = useSearchParams();
   const matchId = params.matchId as string;
   const locale = params.locale as string;
-  const groupId = searchParams.get('groupId');
+  const groupId = searchParams.get("groupId");
 
   const [match, setMatch] = useState<Match | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [homeScore, setHomeScore] = useState<string>('');
-  const [awayScore, setAwayScore] = useState<string>('');
+  const [homeScore, setHomeScore] = useState<string>("");
+  const [awayScore, setAwayScore] = useState<string>("");
 
+  // Utiliser le contexte SSE pour les mises à jour en temps réel
+  const { liveUpdates } = useMatchesLive();
+
+  // Charger le match initialement
   useEffect(() => {
     const fetchMatch = async () => {
       try {
@@ -54,6 +63,36 @@ export default function PredictionPage() {
     }
   }, [matchId]);
 
+  // Appliquer les mises à jour SSE au match
+  const applyLiveUpdates = useCallback(() => {
+    setMatch((prevMatch) => {
+      if (!prevMatch) return null;
+
+      const update = liveUpdates.get(prevMatch.id);
+      if (!update) return prevMatch;
+
+      // Vérifier si une mise à jour est nécessaire
+      if (
+        prevMatch.homeScore !== update.home_score ||
+        prevMatch.awayScore !== update.away_score ||
+        prevMatch.status !== update.status
+      ) {
+        return {
+          ...prevMatch,
+          homeScore: update.home_score,
+          awayScore: update.away_score,
+          status: update.status,
+        };
+      }
+
+      return prevMatch;
+    });
+  }, [liveUpdates]);
+
+  useEffect(() => {
+    applyLiveUpdates();
+  }, [applyLiveUpdates]);
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("fr-FR", {
@@ -71,25 +110,26 @@ export default function PredictionPage() {
     });
   };
 
-  const isMatchFinished = match?.status === 'finished' || match?.status === 'live';
-  const canPredict = match?.status === 'scheduled';
+  const isMatchFinished =
+    match?.status === "finished" || match?.status === "live";
+  const canPredict = match?.status === "scheduled";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!canPredict) {
-      toast.error('Le match a déjà commencé ou est terminé');
+      toast.error("Le match a déjà commencé ou est terminé");
       return;
     }
 
     if (!groupId) {
-      toast.error('Aucun groupe sélectionné');
+      toast.error("Aucun groupe sélectionné");
       return;
     }
 
     // Validation basique
-    if (homeScore === '' || awayScore === '') {
-      toast.error('Veuillez entrer les deux scores');
+    if (homeScore === "" || awayScore === "") {
+      toast.error("Veuillez entrer les deux scores");
       return;
     }
 
@@ -97,16 +137,16 @@ export default function PredictionPage() {
     const away = parseInt(awayScore);
 
     if (isNaN(home) || isNaN(away) || home < 0 || away < 0) {
-      toast.error('Veuillez entrer des scores valides (nombres positifs)');
+      toast.error("Veuillez entrer des scores valides (nombres positifs)");
       return;
     }
 
     try {
       setSubmitting(true);
-      const response = await fetch('/api/predictions', {
-        method: 'POST',
+      const response = await fetch("/api/predictions", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           matchId,
@@ -119,18 +159,23 @@ export default function PredictionPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Erreur lors de l\'enregistrement');
+        throw new Error(data.error || "Erreur lors de l'enregistrement");
       }
 
-      toast.success(`Prédiction enregistrée: ${match?.homeTeam.name} ${home} - ${away} ${match?.awayTeam.name}`);
+      toast.success(
+        `Prédiction enregistrée: ${match?.homeTeam.name} ${home} - ${away} ${match?.awayTeam.name}`
+      );
 
       // Attendre un peu avant de rediriger pour que l'utilisateur voie le toast
       setTimeout(() => {
         router.push(`/${locale}/matches/${matchId}`);
       }, 1500);
     } catch (err) {
-      console.error('Erreur:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de l\'enregistrement de la prédiction';
+      console.error("Erreur:", err);
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : "Erreur lors de l'enregistrement de la prédiction";
       toast.error(errorMessage);
     } finally {
       setSubmitting(false);
@@ -151,7 +196,9 @@ export default function PredictionPage() {
           >
             <Loader2 className="w-12 h-12 text-blue-500" />
           </motion.div>
-          <p className="text-gray-600 dark:text-gray-400">Chargement du match…</p>
+          <p className="text-gray-600 dark:text-gray-400">
+            Chargement du match…
+          </p>
         </motion.div>
       </div>
     );
@@ -166,7 +213,9 @@ export default function PredictionPage() {
           className="flex items-center gap-3 p-6 rounded-3xl bg-red-50/80 dark:bg-red-950/30 backdrop-blur-xl border border-red-200/50 dark:border-red-800/50 shadow-xl"
         >
           <AlertCircle className="w-6 h-6 text-red-500" />
-          <p className="text-red-600 dark:text-red-400">{error ?? "Erreur inconnue"}</p>
+          <p className="text-red-600 dark:text-red-400">
+            {error ?? "Erreur inconnue"}
+          </p>
         </motion.div>
       </div>
     );
@@ -179,23 +228,24 @@ export default function PredictionPage() {
         toastOptions={{
           duration: 4000,
           style: {
-            background: 'var(--toast-bg)',
-            color: 'var(--toast-color)',
-            borderRadius: '1rem',
-            padding: '1rem',
-            fontSize: '0.95rem',
-            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+            background: "var(--toast-bg)",
+            color: "var(--toast-color)",
+            borderRadius: "1rem",
+            padding: "1rem",
+            fontSize: "0.95rem",
+            boxShadow:
+              "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
           },
           success: {
             iconTheme: {
-              primary: '#10b981',
-              secondary: '#fff',
+              primary: "#10b981",
+              secondary: "#fff",
             },
           },
           error: {
             iconTheme: {
-              primary: '#ef4444',
-              secondary: '#fff',
+              primary: "#ef4444",
+              secondary: "#fff",
             },
           },
         }}
@@ -218,12 +268,12 @@ export default function PredictionPage() {
           </Button>
 
           <h1 className="text-4xl font-bold mb-2 bg-linear-to-r from-blue-600 to-cyan-600 dark:from-blue-400 dark:to-cyan-400 bg-clip-text text-transparent">
-            {isMatchFinished ? 'Résultat du Match' : 'Entrer mon Score'}
+            {isMatchFinished ? "Résultat du Match" : "Entrer mon Score"}
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
             {isMatchFinished
-              ? 'Ce match est terminé, vous ne pouvez plus faire de prédiction'
-              : 'Faites votre prédiction pour ce match'}
+              ? "Ce match est terminé, vous ne pouvez plus faire de prédiction"
+              : "Faites votre prédiction pour ce match"}
           </p>
         </motion.div>
 
@@ -250,7 +300,9 @@ export default function PredictionPage() {
               <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
-                  <span>{formatDate(match.date)} - {formatTime(match.date)}</span>
+                  <span>
+                    {formatDate(match.date)} - {formatTime(match.date)}
+                  </span>
                 </div>
                 {match.tournament && (
                   <>
@@ -270,12 +322,12 @@ export default function PredictionPage() {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.4 }}
                   className={`px-4 py-2 rounded-full text-sm font-semibold ${
-                    match.status === 'finished'
-                      ? 'bg-gray-500 text-white'
-                      : 'bg-red-500 text-white animate-pulse'
+                    match.status === "finished"
+                      ? "bg-gray-500 text-white"
+                      : "bg-red-500 text-white animate-pulse"
                   }`}
                 >
-                  {match.status === 'finished' ? 'MATCH TERMINÉ' : 'EN DIRECT'}
+                  {match.status === "finished" ? "MATCH TERMINÉ" : "EN DIRECT"}
                 </motion.div>
               )}
             </motion.div>
@@ -410,11 +462,15 @@ export default function PredictionPage() {
                       ⏱️ Match déjà joué
                     </p>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Le score final est affiché ci-dessus. Les prédictions ne sont plus acceptées.
+                      Le score final est affiché ci-dessus. Les prédictions ne
+                      sont plus acceptées.
                     </p>
                   </div>
                 ) : (
-                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
                     <Button
                       type="submit"
                       disabled={submitting || !canPredict}

@@ -161,12 +161,21 @@ export function PredictionsRanking({
 
                     {/* Points gagnés sur ce match */}
                     {prediction.points !== null && prediction.points > 0 && (
-                      <div className="flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                      <motion.div
+                        key={`points-${member.id}-${prediction.points}`}
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{
+                          scale: [0.8, 1.1, 1],
+                          opacity: 1,
+                        }}
+                        transition={{ duration: 0.4 }}
+                        className="flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900/30 rounded-lg"
+                      >
                         <TrendingUp className="w-3 h-3 text-green-600 dark:text-green-400" />
                         <span className="text-xs font-semibold text-green-600 dark:text-green-400">
                           +{prediction.points}
                         </span>
-                      </div>
+                      </motion.div>
                     )}
                   </div>
                 ) : (
@@ -177,9 +186,17 @@ export function PredictionsRanking({
 
                 {/* Score total */}
                 <div className="text-right min-w-[60px]">
-                  <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                  <motion.div
+                    key={`score-${member.id}-${member.score}`}
+                    initial={{ scale: 1 }}
+                    animate={{
+                      scale: [1, 1.2, 1],
+                    }}
+                    transition={{ duration: 0.5 }}
+                    className="text-2xl font-bold text-blue-600 dark:text-blue-400"
+                  >
                     {member.score}
-                  </div>
+                  </motion.div>
                   <div className="text-xs text-gray-500 dark:text-gray-400">
                     points
                   </div>

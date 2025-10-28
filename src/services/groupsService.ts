@@ -243,6 +243,8 @@ export const groupsService = {
       description: membership.group.description,
       visibility: membership.group.visibility,
       competitionId: membership.group.competitionId,
+      externalMatchId: membership.group.externalMatchId,
+      inviteCode: membership.group.inviteCode,
       role: membership.role,
       score: membership.score,
       membersCount: membership.group._count.members,

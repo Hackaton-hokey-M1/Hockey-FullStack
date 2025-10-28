@@ -7,15 +7,16 @@ import {
   ArrowLeft,
   Calendar,
   Copy,
-  Crown,
-  Shield,
   Trophy,
   Users as UsersIcon,
 } from "lucide-react";
 
 import { useParams, useRouter } from "next/navigation";
 
+import { AutoScoreUpdater } from "@/components/AutoScoreUpdater";
+import { PredictionsRanking } from "@/components/PredictionsRanking";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   getGroupById,
   getUsersInGroup,
@@ -25,6 +26,22 @@ import {
 import { matchService } from "@/services/matchService";
 import type { Match } from "@/types/match";
 
+interface Prediction {
+  id: number;
+  userId: string;
+  groupId: number;
+  externalMatchId: string;
+  homeScore: number;
+  awayScore: number;
+  points: number | null;
+  createdAt: string;
+  user: {
+    id: string;
+    name: string | null;
+    email: string;
+  };
+}
+
 type GroupWithMatch = Group & {
   match?: Match;
 };
@@ -32,8 +49,10 @@ type GroupWithMatch = Group & {
 export default function GroupPage() {
   const router = useRouter();
   const params = useParams();
+  const { user } = useAuth();
   const [group, setGroup] = useState<GroupWithMatch | null>(null);
   const [members, setMembers] = useState<GroupMember[]>([]);
+  const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [loading, setLoading] = useState(true);
   const [copiedCode, setCopiedCode] = useState(false);
 
@@ -47,7 +66,7 @@ export default function GroupPage() {
           : Number(idParam);
         if (Number.isNaN(id)) return;
 
-        // Récupérer les données du groupe et les membres en parallèle
+        // Récupérer les données du groupe, les membres et les prédictions en parallèle
         const [groupResponse, membersResponse] = await Promise.all([
           getGroupById(id),
           getUsersInGroup(id),
@@ -70,6 +89,26 @@ export default function GroupPage() {
           }
         }
 
+        // Charger les prédictions
+        try {
+          const predictionsResponse = await fetch(
+            `/api/groups/${id}/predictions`
+          );
+          if (predictionsResponse.ok) {
+            const predictionsData = await predictionsResponse.json();
+            console.log("Prédictions chargées:", predictionsData.predictions);
+            console.log("Match ID du groupe:", groupWithMatch.externalMatchId);
+            setPredictions(predictionsData.predictions);
+          } else {
+            console.error(
+              "Erreur lors de la récupération des prédictions:",
+              predictionsResponse.status
+            );
+          }
+        } catch (error) {
+          console.error("Erreur lors du chargement des prédictions:", error);
+        }
+
         setGroup(groupWithMatch);
         setMembers(membersResponse.users);
         console.log("Members loaded:", membersResponse.users);
@@ -86,6 +125,34 @@ export default function GroupPage() {
 
     fetchGroupData();
   }, [params?.id]);
+
+  // Callback pour rafraîchir les données après mise à jour des scores
+  const handleScoresUpdated = async () => {
+    const idParam = params?.id;
+    if (!idParam) return;
+    const id = Array.isArray(idParam) ? Number(idParam[0]) : Number(idParam);
+    if (Number.isNaN(id)) return;
+
+    // Recharger les membres et les prédictions
+    try {
+      const [membersResponse, predictionsResponse] = await Promise.all([
+        getUsersInGroup(id),
+        fetch(`/api/groups/${id}/predictions`).then((r) => r.json()),
+      ]);
+
+      setMembers(membersResponse.users);
+      if (predictionsResponse.predictions) {
+        setPredictions(predictionsResponse.predictions);
+      }
+    } catch (error) {
+      console.error("Erreur lors du rechargement des données:", error);
+    }
+  };
+
+  // Callback pour rafraîchir après action de gestion de membre
+  const handleMembersUpdated = async () => {
+    await handleScoresUpdated();
+  };
 
   const copyInviteCode = () => {
     if (group?.inviteCode) {
@@ -124,6 +191,15 @@ export default function GroupPage() {
 
   return (
     <div className="min-h-screen">
+      {/* Mise à jour automatique des scores */}
+      {group?.match && (
+        <AutoScoreUpdater
+          groupId={group.id}
+          matchId={group.match.id}
+          onScoresUpdated={handleScoresUpdated}
+        />
+      )}
+
       <main className="container mx-auto px-4 pb-8 max-w-7xl">
         {/* Back Button */}
         <motion.button
@@ -283,6 +359,11 @@ export default function GroupPage() {
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
+                      onClick={() =>
+                        router.push(
+                          `/predictions/${group.match?.id}?groupId=${group.id}`
+                        )
+                      }
                       className="w-full py-4 rounded-2xl bg-linear-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold text-lg shadow-lg transition-all"
                     >
                       🎯 Faire mon pronostic
@@ -292,7 +373,7 @@ export default function GroupPage() {
               </motion.div>
             )}
 
-            {/* Members List */}
+            {/* Members List with Predictions */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -304,67 +385,18 @@ export default function GroupPage() {
               <div className="relative">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
                   <Trophy className="w-6 h-6 text-yellow-500" />
-                  Classement
+                  Classement {group.match && "& Pronostics"}
                 </h2>
 
-                <div className="space-y-3">
-                  {members.map((member, index) => (
-                    <motion.div
-                      key={member.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      className={`flex items-center justify-between p-4 rounded-2xl ${
-                        index === 0
-                          ? "bg-linear-to-r from-yellow-500/20 to-orange-500/20 border-2 border-yellow-500/50"
-                          : "bg-gray-100/50 dark:bg-gray-800/50"
-                      }`}
-                    >
-                      <div className="flex items-center gap-4">
-                        <div
-                          className={`flex items-center justify-center w-10 h-10 rounded-full font-bold ${
-                            index === 0
-                              ? "bg-yellow-500 text-white"
-                              : index === 1
-                              ? "bg-gray-400 text-white"
-                              : index === 2
-                              ? "bg-orange-600 text-white"
-                              : "bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
-                          }`}
-                        >
-                          {index + 1}
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold text-gray-900 dark:text-white">
-                              {member.name || "Utilisateur"}
-                            </span>
-                            {member.role === "ADMIN" && (
-                              <Crown className="w-4 h-4 text-yellow-500" />
-                            )}
-                            {member.isBanned && (
-                              <Shield className="w-4 h-4 text-red-500" />
-                            )}
-                          </div>
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
-                            Membre depuis{" "}
-                            {new Date(member.joinedAt).toLocaleDateString(
-                              "fr-FR"
-                            )}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                          {member.score}
-                        </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">
-                          points
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
+                <PredictionsRanking
+                  members={members}
+                  predictions={predictions}
+                  matchId={group.match?.id}
+                  groupId={group.id}
+                  ownerId={group.ownerId}
+                  currentUserId={user?.id}
+                  onMembersUpdated={handleMembersUpdated}
+                />
               </div>
             </motion.div>
           </div>
@@ -379,35 +411,91 @@ export default function GroupPage() {
               className="relative overflow-hidden rounded-3xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 shadow-xl p-6"
             >
               <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
-                📊 Règles de scoring
+                🎯 Système de scoring précis
               </h3>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-green-100 dark:bg-green-900/30 rounded-xl">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Score exact
-                  </span>
-                  <span className="text-lg font-bold text-green-600 dark:text-green-400">
-                    +{group.pointsExactScore}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Bon résultat
-                  </span>
-                  <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                    +{group.pointsCorrectResult}
-                  </span>
-                </div>
-                {(group.pointsBonus ?? 0) > 0 && (
-                  <div className="flex items-center justify-between p-3 bg-purple-100 dark:bg-purple-900/30 rounded-xl">
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Bonus
+              <div className="space-y-2">
+                {/* Score exact */}
+                <div className="flex items-center justify-between p-3 bg-linear-to-r from-yellow-100 to-yellow-50 dark:from-yellow-900/30 dark:to-yellow-900/20 rounded-xl border border-yellow-200 dark:border-yellow-800">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                      Score exact
                     </span>
-                    <span className="text-lg font-bold text-purple-600 dark:text-purple-400">
-                      +{group.pointsBonus ?? 0}
+                    <span className="text-xs text-gray-600 dark:text-gray-400">
+                      3-2 → 3-2
                     </span>
                   </div>
-                )}
+                  <span className="text-xl font-bold text-yellow-700 dark:text-yellow-400">
+                    +5
+                  </span>
+                </div>
+
+                {/* 1 score exact */}
+                <div className="flex items-center justify-between p-3 bg-green-100 dark:bg-green-900/30 rounded-xl">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      1 score exact
+                    </span>
+                    <span className="text-xs text-gray-600 dark:text-gray-400">
+                      3-2 → 3-1
+                    </span>
+                  </div>
+                  <span className="text-xl font-bold text-green-600 dark:text-green-400">
+                    +3
+                  </span>
+                </div>
+
+                {/* Scores proches */}
+                <div className="flex items-center justify-between p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      Scores proches (±1)
+                    </span>
+                    <span className="text-xs text-gray-600 dark:text-gray-400">
+                      3-2 → 4-3
+                    </span>
+                  </div>
+                  <span className="text-xl font-bold text-blue-600 dark:text-blue-400">
+                    +2
+                  </span>
+                </div>
+
+                {/* Bon résultat */}
+                <div className="flex items-center justify-between p-3 bg-purple-100 dark:bg-purple-900/30 rounded-xl">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      Bon résultat
+                    </span>
+                    <span className="text-xs text-gray-600 dark:text-gray-400">
+                      3-2 → 5-1
+                    </span>
+                  </div>
+                  <span className="text-xl font-bold text-purple-600 dark:text-purple-400">
+                    +1
+                  </span>
+                </div>
+
+                {/* Mauvais pronostic */}
+                <div className="flex items-center justify-between p-3 bg-gray-100 dark:bg-gray-800/50 rounded-xl">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      Mauvais pronostic
+                    </span>
+                    <span className="text-xs text-gray-600 dark:text-gray-400">
+                      3-2 → 1-4
+                    </span>
+                  </div>
+                  <span className="text-xl font-bold text-gray-500 dark:text-gray-500">
+                    0
+                  </span>
+                </div>
+              </div>
+
+              {/* Info supplémentaire */}
+              <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-900">
+                <p className="text-xs text-blue-800 dark:text-blue-300">
+                  💡 Plus votre pronostic est précis, plus vous gagnez de points
+                  !
+                </p>
               </div>
             </motion.div>
 

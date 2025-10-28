@@ -80,12 +80,27 @@ export interface GroupMember {
   role: "ADMIN" | "MEMBER";
   score: number;
   isBanned: boolean;
-  joinedAt: Date | string;
+  joinedAt: string; // Sérialisé en string par l'API
 }
 
 export const getUsersInGroup = async (
   groupId: number
 ): Promise<{ users: GroupMember[] }> => {
   const response = await privateApi.get(`/groups/${groupId}/users`);
+  return response.data;
+};
+
+// Actions de gestion des membres
+export type MemberAction = "promote" | "demote" | "ban" | "unban" | "kick";
+
+export const manageMember = async (
+  groupId: number,
+  targetUserId: string,
+  action: MemberAction
+): Promise<{ success: boolean; message: string }> => {
+  const response = await privateApi.patch(`/groups/${groupId}/members`, {
+    action,
+    targetUserId,
+  });
   return response.data;
 };

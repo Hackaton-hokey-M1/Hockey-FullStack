@@ -1,44 +1,37 @@
-import { verify } from "jsonwebtoken";
-
+import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
+import { verifyToken } from "@/lib/jwt";
 import { prisma } from "@/lib/prisma";
-
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
-
-interface JWTPayload {
-  userId: string;
-  email: string;
-}
 
 export async function POST(request: NextRequest) {
   try {
     // Vérifier l'authentification
-    const token = request.cookies.get("accessToken")?.value;
-    if (!token) {
-      return NextResponse.json(
-        { error: "Non authentifié" },
-        { status: 401 }
-      );
+    const requestCookies = await cookies();
+    const accessToken = requestCookies.get("accessToken")?.value;
+
+    if (!accessToken) {
+      return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
-    let userId: string;
-    try {
-      const decoded = verify(token, JWT_SECRET) as JWTPayload;
-      userId = decoded.userId;
-    } catch {
-      return NextResponse.json(
-        { error: "Token invalide" },
-        { status: 401 }
-      );
+    const payload = await verifyToken(accessToken);
+    if (!payload) {
+      return NextResponse.json({ error: "Token invalide" }, { status: 401 });
     }
+
+    const userId = payload.userId;
 
     // Récupérer les données de la prédiction
     const body = await request.json();
     const { matchId, groupId, homeScore, awayScore } = body;
 
     // Validation
-    if (!matchId || !groupId || homeScore === undefined || awayScore === undefined) {
+    if (
+      !matchId ||
+      !groupId ||
+      homeScore === undefined ||
+      awayScore === undefined
+    ) {
       return NextResponse.json(
         { error: "Données manquantes" },
         { status: 400 }
@@ -48,26 +41,6 @@ export async function POST(request: NextRequest) {
     if (homeScore < 0 || awayScore < 0) {
       return NextResponse.json(
         { error: "Les scores doivent être positifs" },
-        { status: 400 }
-      );
-    }
-
-    // Vérifier que le match existe
-    const match = await prisma.match.findUnique({
-      where: { id: parseInt(matchId) },
-    });
-
-    if (!match) {
-      return NextResponse.json(
-        { error: "Match introuvable" },
-        { status: 404 }
-      );
-    }
-
-    // Vérifier que le match n'a pas déjà commencé
-    if (match.status !== "SCHEDULED") {
-      return NextResponse.json(
-        { error: "Impossible de faire une prédiction pour ce match" },
         { status: 400 }
       );
     }
@@ -89,13 +62,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Créer ou mettre à jour la prédiction
+    // Créer ou mettre à jour la prédiction (utilise externalMatchId)
     const prediction = await prisma.prediction.upsert({
       where: {
-        userId_groupId_matchId: {
+        userId_groupId_externalMatchId: {
           userId,
           groupId: parseInt(groupId),
-          matchId: parseInt(matchId),
+          externalMatchId: matchId, // matchId est déjà un string de l'API externe
         },
       },
       update: {
@@ -105,7 +78,7 @@ export async function POST(request: NextRequest) {
       create: {
         userId,
         groupId: parseInt(groupId),
-        matchId: parseInt(matchId),
+        externalMatchId: matchId,
         homeScore: parseInt(homeScore),
         awayScore: parseInt(awayScore),
       },
@@ -117,9 +90,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Erreur lors de la création de la prédiction:", error);
-    return NextResponse.json(
-      { error: "Erreur serveur" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }

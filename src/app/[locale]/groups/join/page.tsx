@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  AlertCircle,
   ArrowLeft,
+  CheckCircle2,
   Globe,
   Link as LinkIcon,
   Lock,
@@ -18,57 +20,90 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
-// Type temporaire pour les groupes (à remplacer par votre vrai type)
-interface Group {
-  id: string;
-  name: string;
-  visibility: "public" | "private";
-  description?: string;
-  memberCount: number;
-}
-
-// Données mockées pour l'exemple (à remplacer par un appel API)
-const mockPublicGroups: Group[] = [
-  {
-    id: "1",
-    name: "Les Champions du Hockey",
-    visibility: "public",
-    description: "Groupe pour les vrais fans de hockey !",
-    memberCount: 12,
-  },
-  {
-    id: "2",
-    name: "Paris entre amis",
-    visibility: "public",
-    description: "Paris amicaux sur tous les matchs",
-    memberCount: 8,
-  },
-  {
-    id: "3",
-    name: "Pro Hockey Bets",
-    visibility: "public",
-    description: "Pour les parieurs sérieux uniquement",
-    memberCount: 24,
-  },
-];
+import {
+  getPublicGroups,
+  Group,
+  joinGroupByCode,
+  joinPublicGroup,
+} from "@/lib/apiGroups";
 
 export default function JoinGroupPage() {
   const t = useTranslations("JoinGroup");
   const router = useRouter();
   const [hasInviteLink, setHasInviteLink] = useState(false);
-  const [inviteLink, setInviteLink] = useState("");
-  const [publicGroups] = useState<Group[]>(mockPublicGroups);
+  const [inviteCode, setInviteCode] = useState("");
+  const [publicGroups, setPublicGroups] = useState<Group[]>([]);
+  const [isLoadingGroups, setIsLoadingGroups] = useState(true);
+  const [isJoining, setIsJoining] = useState(false);
+  const [joiningGroupId, setJoiningGroupId] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
-  const handleJoinWithLink = (e: React.FormEvent) => {
-    e.preventDefault();
-    // TODO: Implémenter la logique pour rejoindre avec un lien
-    console.log("Rejoindre avec le lien:", inviteLink);
+  // Charger les groupes publics au montage du composant
+  useEffect(() => {
+    loadPublicGroups();
+  }, []);
+
+  const loadPublicGroups = async () => {
+    try {
+      setIsLoadingGroups(true);
+      const data = await getPublicGroups();
+      setPublicGroups(data.groups);
+    } catch (err: any) {
+      console.error("Erreur lors du chargement des groupes:", err);
+      setError("Impossible de charger les groupes publics");
+    } finally {
+      setIsLoadingGroups(false);
+    }
   };
 
-  const handleJoinGroup = (groupId: string) => {
-    // TODO: Implémenter la logique pour rejoindre un groupe public
-    console.log("Rejoindre le groupe:", groupId);
+  const handleJoinWithCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsJoining(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const response = await joinGroupByCode({ inviteCode: inviteCode.trim() });
+      setSuccess(
+        `Vous avez rejoint le groupe "${response.group.name}" avec succès !`
+      );
+      setInviteCode("");
+
+      // Rediriger vers la page d'accueil après 2 secondes
+      setTimeout(() => {
+        router.push("/");
+      }, 2000);
+    } catch (err: any) {
+      console.error("Erreur lors de la tentative de rejoindre le groupe:", err);
+      setError(err.response?.data?.error || "Une erreur est survenue");
+    } finally {
+      setIsJoining(false);
+    }
+  };
+
+  const handleJoinGroup = async (groupId: number) => {
+    setJoiningGroupId(groupId);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const response = await joinPublicGroup(groupId);
+      setSuccess(response.message);
+
+      // Recharger la liste des groupes pour mettre à jour l'UI
+      await loadPublicGroups();
+
+      // Rediriger vers la page d'accueil après 2 secondes
+      setTimeout(() => {
+        router.push("/");
+      }, 2000);
+    } catch (err: any) {
+      console.error("Erreur lors de la tentative de rejoindre le groupe:", err);
+      setError(err.response?.data?.error || "Une erreur est survenue");
+    } finally {
+      setJoiningGroupId(null);
+    }
   };
 
   return (
@@ -107,6 +142,31 @@ export default function JoinGroupPage() {
           </h1>
           <p className="text-gray-600 dark:text-gray-400">{t("subtitle")}</p>
         </motion.div>
+
+        {/* Messages d'erreur et de succès */}
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-4 rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 flex items-center gap-3 mb-6"
+          >
+            <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0" />
+            <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+          </motion.div>
+        )}
+
+        {success && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-4 rounded-2xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 flex items-center gap-3 mb-6"
+          >
+            <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400 shrink-0" />
+            <p className="text-sm text-green-700 dark:text-green-300">
+              {success}
+            </p>
+          </motion.div>
+        )}
 
         {/* Invite Link Section */}
         <motion.div
@@ -167,34 +227,46 @@ export default function JoinGroupPage() {
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
                   transition={{ duration: 0.3 }}
-                  onSubmit={handleJoinWithLink}
+                  onSubmit={handleJoinWithCode}
                   className="space-y-4 overflow-hidden"
                 >
                   <div className="space-y-2">
-                    <Label htmlFor="inviteLink" className="font-semibold">
-                      {t("inviteLinkLabel")}
+                    <Label htmlFor="inviteCode" className="font-semibold">
+                      Code d'invitation
                     </Label>
                     <div className="relative">
                       <LinkIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                       <Input
-                        id="inviteLink"
+                        id="inviteCode"
                         type="text"
-                        placeholder={t("inviteLinkPlaceholder")}
-                        value={inviteLink}
-                        onChange={(e) => setInviteLink(e.target.value)}
-                        className="h-12 pl-12 rounded-2xl bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-300 dark:border-gray-600"
+                        placeholder="Entrez le code (ex: AB12CD34)"
+                        value={inviteCode}
+                        onChange={(e) =>
+                          setInviteCode(e.target.value.toUpperCase())
+                        }
+                        disabled={isJoining}
+                        maxLength={8}
+                        className="h-12 pl-12 rounded-2xl bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-gray-300 dark:border-gray-600 uppercase"
                       />
                     </div>
                   </div>
                   <motion.div
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                    whileHover={{ scale: isJoining ? 1 : 1.02 }}
+                    whileTap={{ scale: isJoining ? 1 : 0.98 }}
                   >
                     <Button
                       type="submit"
-                      className="w-full h-12 rounded-full bg-linear-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold shadow-lg"
+                      disabled={isJoining || !inviteCode.trim()}
+                      className="w-full h-12 rounded-full bg-linear-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {t("joinWithLink")}
+                      {isJoining ? (
+                        <>
+                          <div className="w-5 h-5 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          Connexion...
+                        </>
+                      ) : (
+                        "Rejoindre avec le code"
+                      )}
                     </Button>
                   </motion.div>
                 </motion.form>
@@ -226,14 +298,25 @@ export default function JoinGroupPage() {
           </div>
 
           {/* Groups List */}
-          {publicGroups.length === 0 ? (
+          {isLoadingGroups ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center py-12 px-6 rounded-3xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50"
+            >
+              <div className="w-12 h-12 mx-auto border-4 border-purple-600 border-t-transparent rounded-full animate-spin mb-4" />
+              <p className="text-gray-600 dark:text-gray-400">
+                Chargement des groupes...
+              </p>
+            </motion.div>
+          ) : publicGroups.length === 0 ? (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               className="text-center py-12 px-6 rounded-3xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50"
             >
               <p className="text-gray-600 dark:text-gray-400">
-                {t("noGroups")}
+                Aucun groupe public disponible pour le moment
               </p>
             </motion.div>
           ) : (
@@ -257,17 +340,17 @@ export default function JoinGroupPage() {
                         <h3 className="text-xl font-bold">{group.name}</h3>
                         <span
                           className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${
-                            group.visibility === "public"
+                            group.visibility === "PUBLIC"
                               ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
                               : "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400"
                           }`}
                         >
-                          {group.visibility === "public" ? (
+                          {group.visibility === "PUBLIC" ? (
                             <Globe className="w-3 h-3" />
                           ) : (
                             <Lock className="w-3 h-3" />
                           )}
-                          {group.visibility === "public" ? "Public" : "Privé"}
+                          {group.visibility === "PUBLIC" ? "Public" : "Privé"}
                         </span>
                       </div>
                       {group.description && (
@@ -278,22 +361,34 @@ export default function JoinGroupPage() {
                       <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                         <Users className="w-4 h-4" />
                         <span>
-                          {group.memberCount}{" "}
-                          {group.memberCount > 1 ? t("members") : t("member")}
+                          {group.membersCount}{" "}
+                          {group.membersCount > 1 ? "membres" : "membre"}
                         </span>
                       </div>
                     </div>
 
                     {/* Join Button */}
                     <motion.div
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                      whileHover={{
+                        scale: joiningGroupId === group.id ? 1 : 1.05,
+                      }}
+                      whileTap={{
+                        scale: joiningGroupId === group.id ? 1 : 0.95,
+                      }}
                     >
                       <Button
                         onClick={() => handleJoinGroup(group.id)}
-                        className="h-12 px-6 rounded-full bg-linear-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold shadow-lg"
+                        disabled={joiningGroupId === group.id}
+                        className="h-12 px-6 rounded-full bg-linear-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {t("joinButton")}
+                        {joiningGroupId === group.id ? (
+                          <>
+                            <div className="w-5 h-5 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            Connexion...
+                          </>
+                        ) : (
+                          "Rejoindre"
+                        )}
                       </Button>
                     </motion.div>
                   </div>

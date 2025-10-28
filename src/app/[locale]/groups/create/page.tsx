@@ -3,7 +3,15 @@
 import { useState } from "react";
 
 import { motion } from "framer-motion";
-import { ArrowLeft, Globe, Lock, Sparkles, Users } from "lucide-react";
+import {
+  AlertCircle,
+  ArrowLeft,
+  CheckCircle2,
+  Globe,
+  Lock,
+  Sparkles,
+  Users,
+} from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { useRouter } from "next/navigation";
@@ -11,6 +19,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { createGroup } from "@/lib/apiGroups";
 
 export default function CreateGroupPage() {
   const t = useTranslations("CreateGroup");
@@ -20,11 +29,45 @@ export default function CreateGroupPage() {
     visibility: "public" as "public" | "private",
     description: "",
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implémenter la création du groupe
-    console.log("Création du groupe:", formData);
+    setIsLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const response = await createGroup({
+        name: formData.name,
+        description: formData.description || undefined,
+        visibility: formData.visibility.toUpperCase() as "PUBLIC" | "PRIVATE",
+      });
+
+      setSuccess(`Groupe "${response.group.name}" créé avec succès !`);
+
+      // Afficher le code d'invitation si c'est un groupe privé
+      if (response.group.inviteCode) {
+        alert(
+          `Code d'invitation : ${response.group.inviteCode}\n\nPartagez ce code avec vos amis pour qu'ils puissent rejoindre votre groupe privé !`
+        );
+      }
+
+      // Rediriger vers la page d'accueil après 2 secondes
+      setTimeout(() => {
+        router.push("/");
+      }, 2000);
+    } catch (err: any) {
+      console.error("Erreur lors de la création du groupe:", err);
+      setError(
+        err.response?.data?.error ||
+          "Une erreur est survenue lors de la création du groupe"
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -75,6 +118,33 @@ export default function CreateGroupPage() {
           <div className="absolute top-0 right-0 w-64 h-64 bg-linear-to-br from-blue-500/10 to-cyan-500/10 rounded-full blur-3xl" />
 
           <form onSubmit={handleSubmit} className="relative space-y-6">
+            {/* Messages d'erreur et de succès */}
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-4 rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 flex items-center gap-3"
+              >
+                <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0" />
+                <p className="text-sm text-red-700 dark:text-red-300">
+                  {error}
+                </p>
+              </motion.div>
+            )}
+
+            {success && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-4 rounded-2xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 flex items-center gap-3"
+              >
+                <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400 shrink-0" />
+                <p className="text-sm text-green-700 dark:text-green-300">
+                  {success}
+                </p>
+              </motion.div>
+            )}
+
             {/* Group Name */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
@@ -232,21 +302,32 @@ export default function CreateGroupPage() {
                 type="button"
                 variant="outline"
                 onClick={() => router.back()}
+                disabled={isLoading}
                 className="flex-1 h-12 rounded-full border-2 font-semibold"
               >
                 {t("cancel")}
               </Button>
               <motion.div
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                whileHover={{ scale: isLoading ? 1 : 1.02 }}
+                whileTap={{ scale: isLoading ? 1 : 0.98 }}
                 className="flex-1"
               >
                 <Button
                   type="submit"
-                  className="w-full h-12 rounded-full bg-linear-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-semibold shadow-lg shadow-blue-500/30"
+                  disabled={isLoading}
+                  className="w-full h-12 rounded-full bg-linear-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-semibold shadow-lg shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Sparkles className="w-5 h-5 mr-2" />
-                  {t("createButton")}
+                  {isLoading ? (
+                    <>
+                      <div className="w-5 h-5 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Création...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-5 h-5 mr-2" />
+                      {t("createButton")}
+                    </>
+                  )}
                 </Button>
               </motion.div>
             </motion.div>

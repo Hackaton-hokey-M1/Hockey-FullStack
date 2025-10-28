@@ -1,0 +1,70 @@
+import privateApi from "./api";
+
+export interface CreateGroupInput {
+  name: string;
+  description?: string;
+  visibility: "PUBLIC" | "PRIVATE";
+  competitionId?: string;
+}
+
+export interface JoinGroupByCodeInput {
+  inviteCode: string;
+}
+
+export interface Group {
+  id: number;
+  name: string;
+  description: string | null;
+  visibility: "PUBLIC" | "PRIVATE";
+  competitionId: string;
+  ownerId: string;
+  inviteCode: string | null;
+  membersCount: number;
+  isOwner?: boolean;
+  isMember?: boolean;
+  createdAt?: string;
+}
+
+export interface UserGroup extends Group {
+  role: "ADMIN" | "MEMBER";
+  score: number;
+  joinedAt: string;
+}
+
+// Créer un groupe
+export const createGroup = async (data: CreateGroupInput) => {
+  const response = await privateApi.post("/groups", data);
+  return response.data;
+};
+
+// Récupérer tous les groupes publics
+export const getPublicGroups = async (): Promise<{ groups: Group[] }> => {
+  const response = await privateApi.get("/groups");
+  return response.data;
+};
+
+// Récupérer les détails d'un groupe
+export const getGroupById = async (
+  groupId: number
+): Promise<{ group: Group }> => {
+  const response = await privateApi.get(`/groups/${groupId}`);
+  return response.data;
+};
+
+// Rejoindre un groupe public
+export const joinPublicGroup = async (groupId: number) => {
+  const response = await privateApi.post(`/groups/${groupId}/join`);
+  return response.data;
+};
+
+// Rejoindre un groupe avec un code d'invitation
+export const joinGroupByCode = async (data: JoinGroupByCodeInput) => {
+  const response = await privateApi.post("/groups/join-by-code", data);
+  return response.data;
+};
+
+// Récupérer les groupes de l'utilisateur connecté
+export const getMyGroups = async (): Promise<{ groups: UserGroup[] }> => {
+  const response = await privateApi.get("/groups/my-groups");
+  return response.data;
+};

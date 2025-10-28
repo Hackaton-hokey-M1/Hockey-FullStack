@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
-import { supabase } from "@/lib/supabase";
+import { verifyToken } from "@/lib/jwt";
+import { prisma } from "@/lib/prisma";
 
 export async function GET(request: Request) {
   const cookie = request.headers.get("cookie");
@@ -12,10 +13,26 @@ export async function GET(request: Request) {
   }
 
   try {
-    const { data: user, error } = await supabase.auth.getUser(token);
+    // Vérifier le token JWT
+    const payload = await verifyToken(token);
 
-    if (error || !user) {
+    if (!payload) {
       return NextResponse.json({ error: "Token invalide ou expiré" }, { status: 403 });
+    }
+
+    // Récupérer l'utilisateur depuis PostgreSQL
+    const user = await prisma.user.findUnique({
+      where: { id: payload.userId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        createdAt: true,
+      },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: "Utilisateur non trouvé" }, { status: 404 });
     }
 
     return NextResponse.json({ message: "Profil accessible", user });

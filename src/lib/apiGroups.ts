@@ -20,7 +20,7 @@ export interface Group {
   competitionId: string;
   externalMatchId?: string | null;
   ownerId: string;
-  inviteCode: string | null;
+  inviteCode?: string | null;
   membersCount: number;
   isOwner?: boolean;
   isMember?: boolean;

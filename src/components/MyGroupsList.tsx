@@ -3,26 +3,45 @@
 import { useEffect, useState } from "react";
 
 import { motion } from "framer-motion";
-import { Copy, Crown, Trophy, Users } from "lucide-react";
+import { Calendar, Copy, Crown, Trophy, Users } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { getMyGroups, UserGroup } from "@/lib/apiGroups";
+import { matchService } from "@/services/matchService";
+import type { Match } from "@/types/match";
+
+type GroupWithMatch = UserGroup & {
+  match?: Match;
+};
 
 export default function MyGroupsList() {
   const t = useTranslations("MyGroups");
   const router = useRouter();
-  const [groups, setGroups] = useState<UserGroup[]>([]);
+  const [groups, setGroups] = useState<GroupWithMatch[]>([]);
   const [loading, setLoading] = useState(true);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchGroups = async () => {
+    const fetchGroupsWithMatches = async () => {
       try {
         const { groups: fetchedGroups } = await getMyGroups();
-        setGroups(fetchedGroups);
+
+        // Récupérer tous les matchs
+        const matches = await matchService.getAllMatches();
+
+        // Enrichir les groupes avec les données des matchs
+        const groupsWithMatches = fetchedGroups.map((group) => {
+          if (group.externalMatchId) {
+            const match = matches.find((m) => m.id === group.externalMatchId);
+            return { ...group, match };
+          }
+          return group;
+        });
+
+        setGroups(groupsWithMatches);
       } catch (error) {
         console.error("Erreur lors du chargement des groupes:", error);
       } finally {
@@ -30,10 +49,10 @@ export default function MyGroupsList() {
       }
     };
 
-    fetchGroups();
+    fetchGroupsWithMatches();
   }, []);
 
-  const copyInviteCode = (code: string | null) => {
+  const copyInviteCode = (code: string | null | undefined) => {
     if (code) {
       navigator.clipboard.writeText(code);
       setCopiedCode(code);
@@ -130,6 +149,63 @@ export default function MyGroupsList() {
               </div>
             </div>
 
+            {/* Match Info */}
+            {group.match && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                className="mb-4 p-4 bg-linear-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-2xl border border-blue-200/50 dark:border-blue-700/50"
+              >
+                <div className="flex items-center gap-2 mb-2 text-xs text-gray-600 dark:text-gray-400">
+                  <Calendar className="w-3.5 h-3.5" />
+                  <span>
+                    {new Date(group.match.date).toLocaleDateString("fr-FR", {
+                      day: "numeric",
+                      month: "short",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                  <span
+                    className={`ml-auto px-2 py-0.5 rounded-full text-xs font-semibold ${
+                      group.match.status === "live"
+                        ? "bg-red-500 text-white animate-pulse"
+                        : group.match.status === "finished"
+                        ? "bg-gray-500 text-white"
+                        : "bg-green-500 text-white"
+                    }`}
+                  >
+                    {group.match.status === "live"
+                      ? "En direct"
+                      : group.match.status === "finished"
+                      ? "Terminé"
+                      : "À venir"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex-1 text-center">
+                    <div className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                      {group.match.homeTeam.name}
+                    </div>
+                    <div className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">
+                      {group.match.homeScore}
+                    </div>
+                  </div>
+                  <div className="px-3 text-gray-400 dark:text-gray-500 font-semibold">
+                    VS
+                  </div>
+                  <div className="flex-1 text-center">
+                    <div className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                      {group.match.awayTeam.name}
+                    </div>
+                    <div className="text-2xl font-bold text-cyan-600 dark:text-cyan-400 mt-1">
+                      {group.match.awayScore}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
             {/* Stats */}
             <div className="flex items-center gap-4 mb-4 text-sm">
               <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
@@ -175,7 +251,7 @@ export default function MyGroupsList() {
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    onClick={() => copyInviteCode(group.inviteCode)}
+                    onClick={() => copyInviteCode(group.inviteCode ?? null)}
                     className="p-2 rounded-lg bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
                   >
                     <Copy

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { supabase } from '@/lib/supabase';
+import { createAccessToken, verifyToken } from '@/lib/jwt';
 
 export async function POST(request: NextRequest) {
   const refreshToken = request.cookies.get("refreshToken")?.value;
@@ -10,19 +10,15 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { data, error } = await supabase.auth.refreshSession({
-      refresh_token: refreshToken,
-    });
+    // Vérifier le refresh token
+    const payload = await verifyToken(refreshToken);
 
-    if (error) {
+    if (!payload) {
       return NextResponse.json({ error: "Refresh token invalide ou expiré" }, { status: 403 });
     }
 
-    const newAccessToken = data.session?.access_token;
-
-    if (!newAccessToken) {
-      return NextResponse.json({ error: "Impossible de régénérer le token" }, { status: 500 });
-    }
+    // Créer un nouveau access token
+    const newAccessToken = await createAccessToken(payload.userId);
 
     const res = NextResponse.json({ message: "Token régénéré" });
     res.cookies.set("accessToken", newAccessToken, {

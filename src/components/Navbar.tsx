@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { Home, LogIn, Menu, Trophy, X } from "lucide-react";
 import { useTranslations } from "next-intl";
-
+import { useLocale } from "next-intl";
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -22,7 +22,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
 export default function Navbar() {
-  const pathname = usePathname();
+    const locale = useLocale();
+    const ln = (p: string) => `/${locale}${p}`;
+    const pathname = usePathname();
   const t = useTranslations("Navbar");
   const { push } = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -31,13 +33,13 @@ export default function Navbar() {
   const { user, logout } = useAuth();
   const navbarY = useTransform(scrollY, [0, 100], [20, 10]);
 
-  const navItems = useMemo(
-    () => [
-      { label: t('home'), href: '/', icon: Home },
-      { label: t('matches'), href: '/matches', icon: Trophy },
-    ],
-    [t]
-  );
+    const navItems = useMemo(
+        () => [
+            { label: t("home"), href: ln("/"), icon: Home },
+            { label: t("matches"), href: ln("/matches"), icon: Trophy },
+        ],
+        [t, locale]
+    );
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
@@ -154,7 +156,14 @@ export default function Navbar() {
 
                       <DropdownMenuContent align="end" sideOffset={8}
                                            className="w-48 bg-white/20 dark:bg-gray-900/30 backdrop-blur-md border border-blue-400 shadow-lg shadow-blue-500/30">
-                        <DropdownMenuItem
+                          <DropdownMenuItem
+                              onClick={() => push(ln("/profil"))}
+                              className="hover:bg-blue-600/30 dark:hover:bg-blue-500/30 transition-all"
+                          >
+                              Mon profil
+                          </DropdownMenuItem>
+
+                          <DropdownMenuItem
                           className="text-red-600 dark:text-red-400 hover:bg-red-600/30 dark:hover:bg-red-500/30 hover:backdrop-blur-md hover:shadow-red-500/50 transition-all"
                           onClick={logout}
                         >

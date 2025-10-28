@@ -9,6 +9,7 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
+import { useMatchesLive } from "@/contexts/MatchesLiveContext";
 import { getMyGroups, UserGroup } from "@/lib/apiGroups";
 import { matchService } from "@/services/matchService";
 import type { Match } from "@/types/match";
@@ -23,6 +24,9 @@ export default function MyGroupsList() {
   const [groups, setGroups] = useState<GroupWithMatch[]>([]);
   const [loading, setLoading] = useState(true);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+
+  // Utiliser le contexte SSE pour les mises à jour en temps réel
+  const { applyUpdateToMatch, liveUpdates } = useMatchesLive();
 
   useEffect(() => {
     const fetchGroupsWithMatches = async () => {
@@ -51,6 +55,24 @@ export default function MyGroupsList() {
 
     fetchGroupsWithMatches();
   }, []);
+
+  // Appliquer les mises à jour SSE aux matchs des groupes
+  useEffect(() => {
+    if (groups.length === 0 || liveUpdates.size === 0) return;
+
+    setGroups((prevGroups) =>
+      prevGroups.map((group) => {
+        if (!group.match) return group;
+
+        const updatedMatch = applyUpdateToMatch(group.match);
+        if (updatedMatch !== group.match) {
+          return { ...group, match: updatedMatch };
+        }
+
+        return group;
+      })
+    );
+  }, [liveUpdates, applyUpdateToMatch]);
 
   const copyInviteCode = (code: string | null | undefined) => {
     if (code) {
@@ -166,7 +188,14 @@ export default function MyGroupsList() {
                       minute: "2-digit",
                     })}
                   </span>
-                  <span
+                  <motion.span
+                    key={`status-${group.id}-${group.match.status}`}
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{
+                      scale: [0.8, 1.1, 1],
+                      opacity: 1,
+                    }}
+                    transition={{ duration: 0.3 }}
                     className={`ml-auto px-2 py-0.5 rounded-full text-xs font-semibold ${
                       group.match.status === "live"
                         ? "bg-red-500 text-white animate-pulse"
@@ -180,16 +209,24 @@ export default function MyGroupsList() {
                       : group.match.status === "finished"
                       ? "Terminé"
                       : "À venir"}
-                  </span>
+                  </motion.span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex-1 text-center">
                     <div className="text-sm font-semibold text-gray-900 dark:text-white truncate">
                       {group.match.homeTeam.name}
                     </div>
-                    <div className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">
+                    <motion.div
+                      key={`home-score-${group.id}-${group.match.homeScore}`}
+                      initial={{ scale: 1 }}
+                      animate={{
+                        scale: [1, 1.2, 1],
+                      }}
+                      transition={{ duration: 0.5 }}
+                      className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1"
+                    >
                       {group.match.homeScore}
-                    </div>
+                    </motion.div>
                   </div>
                   <div className="px-3 text-gray-400 dark:text-gray-500 font-semibold">
                     VS
@@ -198,9 +235,17 @@ export default function MyGroupsList() {
                     <div className="text-sm font-semibold text-gray-900 dark:text-white truncate">
                       {group.match.awayTeam.name}
                     </div>
-                    <div className="text-2xl font-bold text-cyan-600 dark:text-cyan-400 mt-1">
+                    <motion.div
+                      key={`away-score-${group.id}-${group.match.awayScore}`}
+                      initial={{ scale: 1 }}
+                      animate={{
+                        scale: [1, 1.2, 1],
+                      }}
+                      transition={{ duration: 0.5 }}
+                      className="text-2xl font-bold text-cyan-600 dark:text-cyan-400 mt-1"
+                    >
                       {group.match.awayScore}
-                    </div>
+                    </motion.div>
                   </div>
                 </div>
               </motion.div>

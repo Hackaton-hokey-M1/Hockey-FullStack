@@ -103,8 +103,8 @@ export default function TermsPage() {
               En utilisant HockeyBet, vous acceptez ces conditions
             </p>
             <p className="relative text-white/90">
-              Si vous n'acceptez pas ces conditions, veuillez ne pas utiliser
-              notre service.
+              Si vous n&apos;acceptez pas ces conditions, veuillez ne pas
+              utiliser notre service.
             </p>
           </motion.div>
         </motion.div>

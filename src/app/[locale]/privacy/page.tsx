@@ -103,8 +103,8 @@ export default function PrivacyPage() {
               Des questions sur notre politique de confidentialité ?
             </p>
             <p className="relative text-white/90">
-              N'hésitez pas à nous contacter pour toute question concernant vos
-              données personnelles.
+              N&paos;hésitez pas à nous contacter pour toute question concernant
+              vos données personnelles.
             </p>
           </motion.div>
         </motion.div>
